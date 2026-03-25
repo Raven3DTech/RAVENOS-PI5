@@ -1,0 +1,15 @@
+[Unit]
+Description=KlipperPi First Boot Setup
+After=network.target
+ConditionPathExists=/home/pi/scripts/klipperpi-firstboot.sh
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /home/pi/scripts/klipperpi-firstboot.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=klipperpi-firstboot
+
+[Install]
+WantedBy=multi-user.target

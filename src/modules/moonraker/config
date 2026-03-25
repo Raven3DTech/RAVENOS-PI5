@@ -1,0 +1,8 @@
+# Moonraker Module Config
+MOONRAKER_REPO=https://github.com/Arksine/moonraker.git
+MOONRAKER_BRANCH=master
+MOONRAKER_VENV=/home/pi/moonraker-env
+MOONRAKER_DIR=/home/pi/moonraker
+MOONRAKER_CONFIG=/home/pi/printer_data/config/moonraker.conf
+MOONRAKER_LOG=/home/pi/printer_data/logs/moonraker.log
+MOONRAKER_PORT=7125

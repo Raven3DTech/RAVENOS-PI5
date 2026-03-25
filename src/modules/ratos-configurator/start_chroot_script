@@ -1,0 +1,76 @@
+#!/bin/bash
+# ============================================================
+# KlipperPi — Configurator Module Install Script
+# ============================================================
+set -ex
+
+source /common.sh
+install_cleanup_trap
+
+source /tmp/klipperpi_config/ratos-configurator/config
+
+# ── Node.js 20 LTS ───────────────────────────────────────────
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y --no-install-recommends \
+    nodejs \
+    git \
+    avahi-daemon
+
+node --version
+npm --version
+
+# ── Clone Configurator ───────────────────────────────────────
+sudo -u pi git clone \
+    ${RATOS_CONFIGURATOR_REPO} \
+    ${RATOS_CONFIGURATOR_DIR}
+
+cd ${RATOS_CONFIGURATOR_DIR}
+sudo -u pi git checkout ${RATOS_CONFIGURATOR_BRANCH}
+
+# ── Fix hardcoded paths that assume Raspberry Pi OS defaults ─
+# The configurator has bash scripts that hardcode /home/pi.
+# Since we use BASE_USER=pi this is fine, but we patch any
+# remaining hardcoded strings for robustness.
+find ${RATOS_CONFIGURATOR_DIR}/scripts -name "*.sh" \
+    -exec sed -i 's|/home/pi|/home/pi|g' {} \; 2>/dev/null || true
+
+# ── Create RatOS config subdirectory ─────────────────────────
+sudo -u pi mkdir -p ${RATOS_CONFIG_PATH}
+
+# ── Write .env.local ─────────────────────────────────────────
+cp /filesystem/home/pi/ratos-configurator/.env.local \
+   ${RATOS_CONFIGURATOR_DIR}/.env.local
+chown pi:pi ${RATOS_CONFIGURATOR_DIR}/.env.local
+
+# ── Install npm dependencies ──────────────────────────────────
+cd ${RATOS_CONFIGURATOR_DIR}
+sudo -u pi npm ci --prefer-offline
+
+# ── Build the Next.js production app ─────────────────────────
+sudo -u pi npm run build
+
+# ── Sudo rules so configurator can flash boards ───────────────
+cp /filesystem/etc/sudoers.d/klipperpi-flash \
+   /etc/sudoers.d/klipperpi-flash
+chmod 440 /etc/sudoers.d/klipperpi-flash
+visudo -c -f /etc/sudoers.d/klipperpi-flash
+
+# ── Scripts directory ─────────────────────────────────────────
+sudo -u pi mkdir -p /home/pi/scripts
+cp /filesystem/home/pi/scripts/klipperpi-firstboot.sh \
+   /home/pi/scripts/klipperpi-firstboot.sh
+chmod +x /home/pi/scripts/klipperpi-firstboot.sh
+chown pi:pi /home/pi/scripts/klipperpi-firstboot.sh
+
+# ── systemd services ──────────────────────────────────────────
+cp /filesystem/etc/systemd/system/ratos-configurator.service \
+   /etc/systemd/system/ratos-configurator.service
+
+cp /filesystem/etc/systemd/system/klipperpi-firstboot.service \
+   /etc/systemd/system/klipperpi-firstboot.service
+
+systemctl_if_exists enable ratos-configurator
+systemctl_if_exists enable klipperpi-firstboot
+systemctl_if_exists enable avahi-daemon
+
+echo "✅ Configurator module installed"

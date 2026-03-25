@@ -1,0 +1,5 @@
+# Mainsail Module Config
+MAINSAIL_REPO=https://github.com/mainsail-crew/mainsail.git
+MAINSAIL_DIR=/home/pi/mainsail
+MAINSAIL_WEBROOT=/var/www/mainsail
+MAINSAIL_PORT=80

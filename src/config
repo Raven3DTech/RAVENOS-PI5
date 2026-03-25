@@ -1,0 +1,28 @@
+# KlipperPi - CustomPiOS Master Config
+# ─────────────────────────────────────
+# Module order matters — each module can depend on the previous.
+# klipper must come before moonraker, moonraker before mainsail,
+# mainsail before ratos-configurator.
+
+MODULES="klipper moonraker mainsail ratos-configurator"
+
+# Base system settings
+BASE_USER=pi
+BASE_USER_PASSWORD=raspberry
+BASE_HOSTNAME=klipperpi
+
+# Timezone — change to your local timezone
+BASE_TIMEZONE="Australia/Sydney"
+
+# Locale
+BASE_LOCALE="en_AU.UTF-8"
+
+# Keyboard
+BASE_KEYBOARD_LAYOUT="us"
+
+# Enable SSH on first boot
+BASE_SSH=1
+
+# Image compression (xz = smaller file, none = faster build)
+COMPRESS_IMAGE=1
+COMPRESSION_LEVEL=6

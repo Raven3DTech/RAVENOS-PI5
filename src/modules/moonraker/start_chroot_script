@@ -1,0 +1,61 @@
+#!/bin/bash
+# ============================================================
+# KlipperPi — Moonraker Module Install Script
+# ============================================================
+set -ex
+
+source /common.sh
+install_cleanup_trap
+
+source /tmp/klipperpi_config/moonraker/config
+
+# ── System dependencies ──────────────────────────────────────
+apt-get update --allow-releaseinfo-change
+apt-get install -y --no-install-recommends \
+    python3-virtualenv \
+    python3-dev \
+    libopenjp2-7 \
+    libsodium-dev \
+    curl \
+    packagekit \
+    wireless-tools \
+    iw \
+    rfkill \
+    liblmdb-dev \
+    libssl-dev \
+    libjpeg-dev \
+    zlib1g-dev \
+    haproxy
+
+# ── Clone Moonraker ──────────────────────────────────────────
+sudo -u pi git clone ${MOONRAKER_REPO} ${MOONRAKER_DIR}
+cd ${MOONRAKER_DIR}
+sudo -u pi git checkout ${MOONRAKER_BRANCH}
+
+# ── Create Python virtualenv ─────────────────────────────────
+sudo -u pi python3 -m virtualenv -p python3 ${MOONRAKER_VENV}
+sudo -u pi ${MOONRAKER_VENV}/bin/pip install --upgrade pip
+sudo -u pi ${MOONRAKER_VENV}/bin/pip install -r ${MOONRAKER_DIR}/scripts/moonraker-requirements.txt
+
+# ── Install moonraker.conf ───────────────────────────────────
+cp /filesystem/home/pi/printer_data/config/moonraker.conf \
+   /home/pi/printer_data/config/moonraker.conf
+chown pi:pi /home/pi/printer_data/config/moonraker.conf
+
+# ── PolicyKit rules for PackageKit / power actions ───────────
+cat > /etc/polkit-1/rules.d/moonraker.rules << 'EOF'
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.systemd1.manage-units" ||
+         action.id == "org.freedesktop.login1.power-off" ||
+         action.id == "org.freedesktop.login1.reboot") &&
+        subject.user == "pi") {
+        return polkit.Result.YES;
+    }
+});
+EOF
+
+# ── Moonraker systemd service ────────────────────────────────
+cp /filesystem/etc/systemd/system/moonraker.service /etc/systemd/system/moonraker.service
+systemctl_if_exists enable moonraker
+
+echo "✅ Moonraker module installed"
