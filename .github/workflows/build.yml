@@ -58,8 +58,10 @@ jobs:
       - name: Build image
         run: |
           sudo modprobe loop
-          cd KlipperPi/src
-          sudo bash -x $GITHUB_WORKSPACE/CustomPiOS/src/build_dist
+          cd $GITHUB_WORKSPACE/KlipperPi/src
+          $GITHUB_WORKSPACE/CustomPiOS/src/update-custompios-paths
+          sudo DIST_PATH=$GITHUB_WORKSPACE/KlipperPi/src \
+               bash $GITHUB_WORKSPACE/CustomPiOS/src/build
 
       - name: Find and rename output image
         id: rename
