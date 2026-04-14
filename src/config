@@ -5,6 +5,7 @@
 # mainsail before ratos-configurator.
 
 export MODULES="klipper,moonraker,mainsail,ratos-configurator"
+export BASE_BOARD="raspberrypiarm64"
 
 # Base system settings
 BASE_USER=pi
