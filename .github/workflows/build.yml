@@ -73,7 +73,8 @@ jobs:
           fi
           EXT="${IMG##*.img}"
           DEST="${WORKSPACE}/KlipperPi-${VERSION}-arm64.img${EXT}"
-          mv "${IMG}" "${DEST}"
+          sudo mv "${IMG}" "${DEST}"
+          sudo chown $USER:$USER "${DEST}" || true
           echo "IMAGE_PATH=${DEST}" >> "$GITHUB_OUTPUT"
           echo "IMAGE_NAME=$(basename ${DEST})" >> "$GITHUB_OUTPUT"
           ls -lh "${DEST}"
