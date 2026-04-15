@@ -1,31 +1,102 @@
 #!/usr/bin/env bash
-# Installs RatOS
-# GPL V3
-########
+# KlipperScreen — CustomPiOS chroot install
+#
+# GitHub Actions / some chroots mount the image with nosuid: running the upstream
+# installer as user "pi" + "sudo apt" fails (sudo cannot setuid). Upstream also
+# refuses EUID 0; we remove that guard and rewrite "sudo …" to root equivalents,
+# then run the script as root with HOME/USER set to the image user.
+#
+# NETWORK must be n|N to skip NetworkManager + reboot; "skipnetworkmanagerinstall"
+# is not recognized by KlipperScreen-install.sh.
 
-
-# Source error handling, leave this in place
-set -x
-set -e
+set -Ee
 
 source /common.sh
 install_cleanup_trap
 
-# Add root rights to X11
-echo_green "Adding root rights to X11.."
+echo_green "Adding root rights to X11 (baseline)..."
 mkdir -p /etc/X11
 touch /etc/X11/Xwrapper.config
-echo needs_root_rights=yes>>/etc/X11/Xwrapper.config
+grep -q needs_root_rights /etc/X11/Xwrapper.config 2>/dev/null || echo needs_root_rights=yes >>/etc/X11/Xwrapper.config
 
 echo_green "Installing KlipperScreen"
 
-cd /home/${BASE_USER}
-sudo -u "${BASE_USER}" git clone -b "${KLIPPERSCREEN_BRANCH}" --depth 1 \
-    "${KLIPPERSCREEN_SHIP}" KlipperScreen
-cd /home/${BASE_USER}/KlipperScreen
-sudo -u "${BASE_USER}" NETWORK="skipnetworkmanagerinstall" ./scripts/KlipperScreen-install.sh
+KS_DIR="/home/${BASE_USER}/KlipperScreen"
+INSTALL_SH="${KS_DIR}/scripts/KlipperScreen-install.sh"
 
-# Mute output from klipperscreen service
-sudo sed -i 's/\[Service\]/\[Service\]\n\StandardOutput=null\nStandardError=null/g' /etc/systemd/system/KlipperScreen.service
+rm -rf "${KS_DIR}"
+git clone -b "${KLIPPERSCREEN_BRANCH}" --depth 1 "${KLIPPERSCREEN_SHIP}" "${KS_DIR}"
+chown -R "${BASE_USER}:${BASE_USER}" "${KS_DIR}"
+
+python3 - "${INSTALL_SH}" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+old = (
+    'if [ "$EUID" == 0 ]\n'
+    ' then echo_error "Please do not run this script as root"\n'
+    ' exit 1\n'
+    'fi\n'
+)
+if old not in text:
+    sys.exit(
+        "KlipperScreen-install.sh: root guard block not found; "
+        "update klipperscreen/start_chroot_script patch for upstream changes."
+    )
+text = text.replace(old, "", 1)
+
+replacements = [
+    ("sudo apt install", "apt-get install -y"),
+    ("sudo apt update", "apt-get update"),
+    ("sudo apt -f install", "apt-get -f install -y"),
+    ("sudo tee", "tee"),
+    ("sudo systemctl", "systemctl"),
+    ("sudo adduser", "adduser"),
+    ("sudo groupadd", "groupadd"),
+    ("sudo mkdir", "mkdir"),
+    ("sudo cp ", "cp "),
+    ("sudo mv ", "mv "),
+    ("sudo rm ", "rm -f "),
+]
+for a, b in replacements:
+    text = text.replace(a, b)
+
+if "sudo " in text:
+    i = text.index("sudo ")
+    snippet = repr(text[i : i + 100])
+    sys.exit(
+        "KlipperScreen-install.sh: still contains 'sudo '; extend replacements: " + snippet
+    )
+
+path.write_text(text, encoding="utf-8", newline="\n")
+PY
+
+export DEBIAN_FRONTEND=noninteractive
+export HOME="/home/${BASE_USER}"
+export USER="${BASE_USER}"
+export BACKEND=X
+export SERVICE=y
+export NETWORK=n
+export START=0
+
+cd "${KS_DIR}"
+bash "${INSTALL_SH}"
+
+chown -R "${BASE_USER}:${BASE_USER}" "${KS_DIR}"
+if [[ -d "${HOME}/.KlipperScreen-env" ]]; then
+    chown -R "${BASE_USER}:${BASE_USER}" "${HOME}/.KlipperScreen-env"
+fi
+if [[ -d "${HOME}/.local" ]]; then
+    chown -R "${BASE_USER}:${BASE_USER}" "${HOME}/.local"
+fi
+
+if [[ -f /etc/systemd/system/KlipperScreen.service ]]; then
+    sed -i 's/\[Service\]/\[Service\]\nStandardOutput=null\nStandardError=null/g' \
+        /etc/systemd/system/KlipperScreen.service
+fi
 
 systemctl_if_exists stop KlipperScreen || true
+
+echo_green "Installing KlipperScreen ... DONE"
