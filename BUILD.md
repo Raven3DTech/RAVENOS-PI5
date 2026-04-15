@@ -132,6 +132,21 @@ Replace `/dev/sdX` with your actual device (check with `lsblk`).
 
 ---
 
+## RatOS-configuration on KlipperPi
+
+The image includes [RatOS-configuration](https://github.com/Rat-OS/RatOS-configuration) (`v2.1.x`) under `~/printer_data/config/RatOS` so the RatOS Configurator and board templates match upstream. Note the following **compatibility** points versus a stock RatOS image:
+
+| Topic | KlipperPi behaviour |
+|--------|---------------------|
+| **OS** | Raspberry Pi OS Lite **Bookworm arm64** — same Debian family RatOS targets; no Armbian/CB1-specific paths. |
+| **User / paths** | RatOS scripts often assume `/home/pi`; KlipperPi uses `BASE_USER=pi`, so paths align. |
+| **Moonraker ↔ Klipper socket** | KlipperPi keeps `klippy_uds_address: /tmp/klippy_uds` in the **live** `moonraker.conf`. The `moonraker.conf` file **inside** the RatOS-configuration repo is a RatOS reference layout (e.g. `~/printer_data/comms/klippy.sock`); it is **not** copied over the system config, so Moonraker and `klipper.service` stay in sync. |
+| **`scripts/ratos-install.sh`** | Upstream expects to be run as **`pi` (not root)**, replaces `printer.cfg` from RatOS templates, installs many udev symlinks, and calls the **`ratos` CLI** (Configurator API) to register Klipper extensions. The image build **only clones** the repo and installs `python3-matplotlib` / `curl`; run `ratos-install.sh` manually after first boot if you want the full RatOS wiring. |
+| **Moonraker Update Manager** | `[update_manager ratos_configuration]` tracks the Git repo **without** `install_script`, so updates do not automatically run `ratos-install.sh` (avoids overwriting the KlipperPi placeholder `printer.cfg` on every update). |
+| **Upstream notice** | RatOS documents that development is moving toward [RatOS-configurator](https://github.com/Rat-OS/RatOS-configurator); the configuration tree remains the modular Klipper config source. |
+
+---
+
 ## WiFi Setup
 
 WiFi can be configured after first boot via SSH:

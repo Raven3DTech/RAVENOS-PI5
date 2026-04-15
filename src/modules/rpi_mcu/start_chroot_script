@@ -5,12 +5,16 @@ set -ex
 source /common.sh
 install_cleanup_trap
 
-echo_green "Building Klipper Linux-process MCU (klipper_mcu) ..."
+echo_green "Building Klipper secondary MCU (klipper_mcu) ..."
 
-sudo -u "${BASE_USER}" bash -c "cat > /home/${BASE_USER}/klipper/.config <<'EOF'
-CONFIG_MACH_LINUX=y
-EOF
-"
+RPI_FW="/home/${BASE_USER}/printer_data/config/RatOS/boards/rpi/firmware.config"
+if [[ -f "${RPI_FW}" ]]; then
+    echo_green "Using RatOS-configuration RPi MCU Kconfig: ${RPI_FW}"
+    sudo -u "${BASE_USER}" cp -f "${RPI_FW}" "/home/${BASE_USER}/klipper/.config"
+else
+    echo_green "RatOS rpi firmware.config not found; using Linux-process MCU preset"
+    printf 'CONFIG_MACH_LINUX=y\n' | sudo -u "${BASE_USER}" tee "/home/${BASE_USER}/klipper/.config" >/dev/null
+fi
 
 pushd "/home/${BASE_USER}/klipper" &>/dev/null
 sudo -u "${BASE_USER}" make olddefconfig

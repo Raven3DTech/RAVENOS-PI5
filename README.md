@@ -130,6 +130,7 @@ Each component can be updated independently via Moonraker's update manager
 | Moonraker | https://github.com/Arksine/moonraker |
 | Mainsail | https://github.com/mainsail-crew/mainsail |
 | Configurator | https://github.com/Rat-OS/RatOS-configurator |
+| RatOS-configuration | https://github.com/Rat-OS/RatOS-configuration (branch v2.1.x, path ~/printer_data/config/RatOS) |
 | Crowsnest | https://github.com/mainsail-crew/crowsnest |
 | Sonar | https://github.com/mainsail-crew/sonar |
 | moonraker-timelapse | https://github.com/mainsail-crew/moonraker-timelapse |

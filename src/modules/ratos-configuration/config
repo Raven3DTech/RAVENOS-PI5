@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# [RatOS-configuration](https://github.com/Rat-OS/RatOS-configuration) — modular Klipper macros/board defs (branch v2.1.x)
+[ -n "$RATOS_CONFIGURATION_REPO" ] || RATOS_CONFIGURATION_REPO="https://github.com/Rat-OS/RatOS-configuration.git"
+[ -n "$RATOS_CONFIGURATION_BRANCH" ] || RATOS_CONFIGURATION_BRANCH="v2.1.x"
+[ -n "$RATOS_CONFIGURATION_PATH" ] || RATOS_CONFIGURATION_PATH="/home/${BASE_USER}/printer_data/config/RatOS"
+:
