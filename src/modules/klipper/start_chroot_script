@@ -1,0 +1,80 @@
+#!/bin/bash
+# ============================================================
+# KlipperPi — Klipper Module Install Script
+# Runs inside the chroot of the base image during build.
+# ============================================================
+set -ex
+
+source /common.sh
+install_cleanup_trap
+
+# ── Source module config ─────────────────────────────────────
+# Variables are automatically exported by CustomPiOS
+
+# ── System dependencies ──────────────────────────────────────
+apt-get update --allow-releaseinfo-change
+apt-get install -y --no-install-recommends \
+    python3-pip \
+    python3-dev \
+    python3-virtualenv \
+    python3-numpy \
+    python3-cffi \
+    python3-greenlet \
+    libffi-dev \
+    build-essential \
+    git \
+    libncurses-dev \
+    avrdude \
+    gcc-avr \
+    binutils-avr \
+    avr-libc \
+    stm32flash \
+    dfu-util \
+    libnewlib-arm-none-eabi \
+    gcc-arm-none-eabi \
+    binutils-arm-none-eabi \
+    libusb-1.0-0
+
+# ── Clone Klipper ────────────────────────────────────────────
+sudo -u pi git clone ${KLIPPER_REPO} ${KLIPPER_DIR}
+cd ${KLIPPER_DIR}
+sudo -u pi git checkout ${KLIPPER_BRANCH}
+
+# ── Create Python virtualenv ─────────────────────────────────
+sudo -u pi python3 -m virtualenv -p python3 ${KLIPPER_VENV}
+sudo -u pi ${KLIPPER_VENV}/bin/pip install --upgrade pip
+sudo -u pi ${KLIPPER_VENV}/bin/pip install -r ${KLIPPER_DIR}/scripts/klippy-requirements.txt
+
+# ── Create printer_data directory structure ──────────────────
+sudo -u pi mkdir -p \
+    /home/pi/printer_data/config \
+    /home/pi/printer_data/logs \
+    /home/pi/printer_data/gcodes \
+    /home/pi/printer_data/systemd \
+    /home/pi/printer_data/comms \
+    /home/pi/printer_data/certs \
+    /home/pi/printer_data/backup
+
+# ── Copy default printer.cfg ─────────────────────────────────
+sudo -u pi cp /filesystem/home/pi/printer_data/config/printer.cfg \
+              /home/pi/printer_data/config/printer.cfg
+
+# ── Install systemd service ──────────────────────────────────
+cp /filesystem/etc/systemd/system/klipper.service /etc/systemd/system/klipper.service
+
+systemctl_if_exists enable klipper
+
+# ── Serial / USB permissions ─────────────────────────────────
+usermod -a -G tty,dialout,plugdev pi
+
+# ── udev rules for DFU / STM32 flashing ─────────────────────
+cat > /etc/udev/rules.d/49-klipperpi.rules << 'EOF'
+# STM32 DFU
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", MODE="0666", GROUP="plugdev"
+# RP2040 (Raspberry Pi Pico)
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="0003", MODE="0666", GROUP="plugdev"
+# Generic USB-serial for flashing
+SUBSYSTEMS=="usb-serial", MODE="0660", GROUP="dialout"
+EOF
+
+echo "✅ Klipper module installed"

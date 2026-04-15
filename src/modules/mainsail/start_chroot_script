@@ -1,0 +1,73 @@
+#!/bin/bash
+# ============================================================
+# KlipperPi — Mainsail Module Install Script
+# ============================================================
+set -ex
+
+source /common.sh
+install_cleanup_trap
+
+# Variables are automatically exported by CustomPiOS
+
+# ── System dependencies ──────────────────────────────────────
+apt-get update --allow-releaseinfo-change
+apt-get install -y --no-install-recommends \
+    nginx \
+    unzip \
+    curl \
+    wget
+
+# ── Download latest Mainsail release ─────────────────────────
+MAINSAIL_RELEASE_URL=$(curl -sI \
+    https://github.com/mainsail-crew/mainsail/releases/latest \
+    | grep -i '^location:' \
+    | awk '{print $2}' \
+    | tr -d '\r')
+
+MAINSAIL_VERSION=$(echo "${MAINSAIL_RELEASE_URL}" | awk -F'/tag/' '{print $2}')
+
+echo "Installing Mainsail ${MAINSAIL_VERSION}"
+
+wget -q \
+    "https://github.com/mainsail-crew/mainsail/releases/download/${MAINSAIL_VERSION}/mainsail.zip" \
+    -O /tmp/mainsail.zip
+
+mkdir -p ${MAINSAIL_WEBROOT}
+unzip -q /tmp/mainsail.zip -d ${MAINSAIL_WEBROOT}
+rm /tmp/mainsail.zip
+
+# ── Also keep a copy in pi home for update_manager tracking ──
+sudo -u pi mkdir -p ${MAINSAIL_DIR}
+sudo -u pi cp -r ${MAINSAIL_WEBROOT}/. ${MAINSAIL_DIR}/
+
+# ── Symlink so nginx serves from the tracked directory ────────
+rm -rf ${MAINSAIL_WEBROOT}
+ln -s ${MAINSAIL_DIR} ${MAINSAIL_WEBROOT}
+
+# ── Mainsail config.json — point at local Moonraker ──────────
+cat > ${MAINSAIL_DIR}/config.json << 'EOF'
+{
+    "instancesDB": "moonraker",
+    "instances": [
+        {
+            "hostname": "klipperpi.local",
+            "port": 7125,
+            "path": "/"
+        }
+    ]
+}
+EOF
+
+# ── nginx config ─────────────────────────────────────────────
+cp /filesystem/etc/nginx/sites-available/mainsail \
+   /etc/nginx/sites-available/mainsail
+
+rm -f /etc/nginx/sites-enabled/default
+ln -sf /etc/nginx/sites-available/mainsail /etc/nginx/sites-enabled/mainsail
+
+# ── Verify nginx config ───────────────────────────────────────
+nginx -t
+
+systemctl_if_exists enable nginx
+
+echo "✅ Mainsail module installed — version ${MAINSAIL_VERSION}"

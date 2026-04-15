@@ -1,0 +1,5 @@
+# Mainsail Module Config
+export MAINSAIL_REPO=https://github.com/mainsail-crew/mainsail.git
+export MAINSAIL_DIR=/home/pi/mainsail
+export MAINSAIL_WEBROOT=/var/www/mainsail
+export MAINSAIL_PORT=80

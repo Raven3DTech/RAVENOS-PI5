@@ -1,0 +1,23 @@
+# ============================================================
+# KlipperPi — sudoers rules for board flashing
+# Allows the 'pi' user to run flash-related commands
+# without a password, required by the Configurator.
+# ============================================================
+
+# Allow klipper firmware flash via DFU / avrdude / STM32flash
+pi ALL=(ALL) NOPASSWD: /usr/bin/dfu-util
+pi ALL=(ALL) NOPASSWD: /usr/bin/avrdude
+pi ALL=(ALL) NOPASSWD: /usr/bin/stm32flash
+pi ALL=(ALL) NOPASSWD: /home/pi/klipper/scripts/flash-sdcard.sh
+pi ALL=(ALL) NOPASSWD: /home/pi/ratos-configurator/scripts/*.sh
+
+# Allow systemctl restart of klipper and moonraker
+pi ALL=(ALL) NOPASSWD: /bin/systemctl restart klipper
+pi ALL=(ALL) NOPASSWD: /bin/systemctl restart moonraker
+pi ALL=(ALL) NOPASSWD: /bin/systemctl restart ratos-configurator
+pi ALL=(ALL) NOPASSWD: /bin/systemctl stop klipper
+pi ALL=(ALL) NOPASSWD: /bin/systemctl start klipper
+
+# Allow shutdown and reboot
+pi ALL=(ALL) NOPASSWD: /sbin/shutdown
+pi ALL=(ALL) NOPASSWD: /sbin/reboot

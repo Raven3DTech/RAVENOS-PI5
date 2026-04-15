@@ -1,0 +1,24 @@
+[Unit]
+Description=KlipperPi Configurator
+Documentation=https://github.com/Rat-OS/RatOS-configurator
+After=network.target moonraker.service
+Wants=moonraker.service
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/ratos-configurator
+EnvironmentFile=/home/pi/ratos-configurator/.env.local
+ExecStart=/usr/bin/node \
+    /home/pi/ratos-configurator/node_modules/.bin/next \
+    start \
+    --port 3000 \
+    --hostname 0.0.0.0
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ratos-configurator
+
+[Install]
+WantedBy=multi-user.target

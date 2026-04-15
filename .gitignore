@@ -1,0 +1,20 @@
+# Build outputs
+src/workspace/
+src/image/
+src/build_dist
+src/common.sh
+src/custompios-vars
+
+# Node
+node_modules/
+.next/
+
+# Environment files with secrets
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
