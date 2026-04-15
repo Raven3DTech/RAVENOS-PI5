@@ -49,7 +49,8 @@ cd ${RATOS_CONFIGURATOR_DIR}/src
 sudo -u pi pnpm install
 
 # ── Build the Next.js production app ─────────────────────────
-sudo -u pi pnpm run build
+# CI runners are memory-tight; cap Node heap explicitly to reduce OOM during Next build.
+sudo -u pi env NODE_OPTIONS="--max-old-space-size=4096" pnpm run build
 
 # ── Sudo rules so configurator can flash boards ───────────────
 cp /filesystem/etc/sudoers.d/klipperpi-flash \

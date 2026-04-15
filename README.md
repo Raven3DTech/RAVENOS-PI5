@@ -126,7 +126,7 @@ Each component can be updated independently via Moonraker's update manager
 
 | Module | Source |
 |---|---|
-| network-support | NetworkManager + WiFi firmware (Bookworm / Pi 4–5) |
+| network-support | WiFi firmware + WPA tools (NM from base Pi OS; ModemManager masked on first boot) |
 | Klipper | https://github.com/Klipper3d/klipper |
 | Moonraker | https://github.com/Arksine/moonraker |
 | Mainsail | https://github.com/mainsail-crew/mainsail |

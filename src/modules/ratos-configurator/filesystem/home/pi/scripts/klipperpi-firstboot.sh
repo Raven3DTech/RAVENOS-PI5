@@ -22,6 +22,11 @@ echo "============================================"
 echo "[1/7] Unblocking rfkill (WiFi)..."
 rfkill unblock all 2>/dev/null || true
 
+# ModemManager can capture USB-serial devices used for printer flashing; keep it off.
+systemctl stop ModemManager 2>/dev/null || true
+systemctl disable ModemManager 2>/dev/null || true
+systemctl mask ModemManager 2>/dev/null || true
+
 # ── Expand root filesystem ───────────────────────────────────
 echo "[2/7] Expanding filesystem..."
 raspi-config --expand-rootfs || true

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# KlipperPi — explicit network stack for Pi 4/5 (Bookworm uses NetworkManager by default).
+# KlipperPi — WiFi firmware + userland (Ethernet + NetworkManager come from the base Pi OS image).
+# Avoid `systemctl` / full `network-manager` reinstall inside the chroot (can hang or fail in CI).
 set -ex
 
 source /common.sh
@@ -7,22 +8,13 @@ install_cleanup_trap
 
 apt-get update --allow-releaseinfo-change
 
-# WiFi on Pi 5 uses brcmfmac; Ethernet is in-kernel. These packages are often already on the
-# base image but are pinned here so CustomPiOS builds do not accidentally omit them.
 apt-get install -y --no-install-recommends \
-    network-manager \
     wpasupplicant \
     iw \
     rfkill \
     wireless-regdb \
     firmware-brcm80211
 
-# Bookworm Pi OS uses NetworkManager for DHCP on Ethernet + WiFi.
-systemctl_if_exists enable NetworkManager
+# ModemManager is masked on first real boot (see klipperpi-firstboot.sh) so it does not grab USB-serial.
 
-# ModemManager can grab serial devices (printer boards); RatOS masks it — do the same.
-systemctl_if_exists stop ModemManager || true
-systemctl_if_exists disable ModemManager || true
-systemctl_if_exists mask ModemManager || true
-
-echo_green "network-support: NetworkManager + WiFi firmware stack ensured"
+echo_green "network-support: WiFi firmware + WPA tools ensured (NM from base image)"

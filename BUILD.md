@@ -183,7 +183,7 @@ sudo raspi-config
 
 ## Troubleshooting: no Ethernet lights / no network (Pi 5)
 
-The image recipe includes a **`network-support`** module that installs **NetworkManager**, **wpasupplicant**, **Broadcom WiFi firmware** (`firmware-brcm80211`), **rfkill**, and related tools, and **masks ModemManager** (it can grab USB-serial devices used by printer boards).
+The image recipe includes a **`network-support`** module that installs **wpasupplicant**, **Broadcom WiFi firmware** (`firmware-brcm80211`), **rfkill**, **iw**, and **wireless-regdb**. **NetworkManager** and Ethernet drivers come from the stock Raspberry Pi OS base image (we avoid reinstalling NM inside the chroot so CI/chroot builds stay reliable). **ModemManager** is **masked on first boot** so it does not grab USB-serial printer devices.
 
 **Important:** On Raspberry Pi OS **Bookworm**, the built-in Ethernet interface is often named **`end0`**, not `eth0`. WiFi is usually **`wlan0`**. Check link status with:
 
@@ -316,7 +316,7 @@ Pi 5 (Bookworm 64-bit arm64)
 ├── systemd services
 │   ├── klipper.service          :  klippy.py → /tmp/klippy_uds
 │   ├── moonraker.service        :  moonraker.py → :7125
-│   ├── NetworkManager.service   :  Ethernet + WiFi (Bookworm)
+│   ├── NetworkManager.service   :  Ethernet + WiFi (from base Pi OS image)
 │   ├── nginx.service            :  → :80 (Mainsail) + proxy :7125
 │   ├── ratos-configurator.service: next start → :3000
 │   ├── crowsnest.service         :  webcam streaming

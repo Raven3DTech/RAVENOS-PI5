@@ -11,6 +11,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    timeout-minutes: 360
 
     steps:
       - name: Checkout KlipperPi
@@ -57,6 +58,16 @@ jobs:
             CUSTOM_PI_OS_PATH=$GITHUB_WORKSPACE/CustomPiOS/src \
             BASE_ZIP_IMG=$GITHUB_WORKSPACE/base-image-cache/raspios_lite_arm64_latest.img.xz \
             bash $GITHUB_WORKSPACE/CustomPiOS/src/build
+
+      - name: Upload build diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-failure-logs
+          if-no-files-found: warn
+          path: |
+            build.log
+          retention-days: 7
 
       - name: Find, shrink, and rename output image
         id: rename
