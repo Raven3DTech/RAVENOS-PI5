@@ -1,114 +1,130 @@
 #!/usr/bin/env bash
-# KlipperScreen — CustomPiOS chroot install
+# KlipperScreen — CustomPiOS chroot install (no upstream KlipperScreen-install.sh)
 #
-# GitHub Actions / some chroots mount the image with nosuid: running the upstream
-# installer as user "pi" + "sudo apt" fails (sudo cannot setuid). Upstream also
-# refuses EUID 0; we remove that guard and rewrite "sudo …" to root equivalents,
-# then run the script as root with HOME/USER set to the image user.
-#
-# NETWORK must be n|N to skip NetworkManager + reboot; "skipnetworkmanagerinstall"
-# is not recognized by KlipperScreen-install.sh.
+# GitHub Actions / qemu chroots often mount the image root with nosuid. Any flow
+# that runs as "pi" and calls /usr/bin/sudo fails. Upstream's installer is built
+# around sudo; instead we install packages, venv, systemd unit, and polkit bits
+# directly as root, then chown tree to BASE_USER.
 
 set -Ee
 
 source /common.sh
 install_cleanup_trap
 
+export DEBIAN_FRONTEND=noninteractive
+
 echo_green "Adding root rights to X11 (baseline)..."
 mkdir -p /etc/X11
 touch /etc/X11/Xwrapper.config
 grep -q needs_root_rights /etc/X11/Xwrapper.config 2>/dev/null || echo needs_root_rights=yes >>/etc/X11/Xwrapper.config
 
-echo_green "Installing KlipperScreen"
+echo_green "Installing KlipperScreen (chroot-native, no sudo)"
 
 KS_DIR="/home/${BASE_USER}/KlipperScreen"
-INSTALL_SH="${KS_DIR}/scripts/KlipperScreen-install.sh"
+KSENV="/home/${BASE_USER}/.KlipperScreen-env"
+REQ="${KS_DIR}/scripts/KlipperScreen-requirements.txt"
+SVC_SRC="${KS_DIR}/scripts/KlipperScreen.service"
 
 rm -rf "${KS_DIR}"
 git clone -b "${KLIPPERSCREEN_BRANCH}" --depth 1 "${KLIPPERSCREEN_SHIP}" "${KS_DIR}"
-chown -R "${BASE_USER}:${BASE_USER}" "${KS_DIR}"
 
-# NOTE: `python3 - "$path" <<PY` puts `-` in sys.argv[1]; the real path is argv[2].
-# Pass the file via env so the patch always edits KlipperScreen-install.sh.
-export KLIPPERSCREEN_INSTALL_SCRIPT="${INSTALL_SH}"
-python3 <<'PY'
-import os
-import pathlib
-import re
-import sys
+apt-get update -qq
+apt-get install -y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold \
+    xinit xinput x11-xserver-utils \
+    xserver-xorg-input-evdev xserver-xorg-input-libinput \
+    xserver-xorg-legacy xserver-xorg-video-fbdev \
+    libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev \
+    gir1.2-gtk-3.0 librsvg2-common libopenjp2-7 libdbus-glib-1-dev autoconf python3-venv \
+    fonts-nanum fonts-ipafont libmpv-dev \
+    build-essential cmake libsystemd-dev
 
-path = pathlib.Path(os.environ["KLIPPERSCREEN_INSTALL_SCRIPT"])
-text = path.read_text(encoding="utf-8")
-old = (
-    'if [ "$EUID" == 0 ]\n'
-    ' then echo_error "Please do not run this script as root"\n'
-    ' exit 1\n'
-    'fi\n'
-)
-if old in text:
-    text = text.replace(old, "", 1)
-else:
-    text2, n = re.subn(
-        r'^if \[ "\$EUID" == 0 \]\s*\n'
-        r' then echo_error "Please do not run this script as root"\s*\n'
-        r' exit 1\s*\n'
-        r'fi\s*\n',
-        "",
-        text,
-        count=1,
-        flags=re.MULTILINE,
-    )
-    if n != 1:
-        sys.exit(
-            "KlipperScreen-install.sh: root guard block not found; "
-            "update klipperscreen/start_chroot_script patch for upstream changes."
-        )
-    text = text2
+# Match upstream update_x11()
+mkdir -p /etc/X11
+tee /etc/X11/Xwrapper.config >/dev/null <<'EOF'
+allowed_users=anybody
+needs_root_rights=yes
+EOF
 
-replacements = [
-    ("sudo apt install", "apt-get install -y"),
-    ("sudo apt update", "apt-get update"),
-    ("sudo apt -f install", "apt-get -f install -y"),
-    ("sudo tee", "tee"),
-    ("sudo systemctl", "systemctl"),
-    ("sudo adduser", "adduser"),
-    ("sudo groupadd", "groupadd"),
-    ("sudo mkdir", "mkdir"),
-    ("sudo cp ", "cp "),
-    ("sudo mv ", "mv "),
-    ("sudo rm ", "rm -f "),
-]
-for a, b in replacements:
-    text = text.replace(a, b)
-
-if "sudo " in text:
-    i = text.index("sudo ")
-    snippet = repr(text[i : i + 100])
-    sys.exit(
-        "KlipperScreen-install.sh: still contains 'sudo '; extend replacements: " + snippet
-    )
-
-path.write_text(text, encoding="utf-8", newline="\n")
-PY
-
-export DEBIAN_FRONTEND=noninteractive
-export HOME="/home/${BASE_USER}"
-export USER="${BASE_USER}"
-export BACKEND=X
-export SERVICE=y
-export NETWORK=n
-export START=0
-
-cd "${KS_DIR}"
-bash "${INSTALL_SH}"
-
-chown -R "${BASE_USER}:${BASE_USER}" "${KS_DIR}"
-if [[ -d "${HOME}/.KlipperScreen-env" ]]; then
-    chown -R "${BASE_USER}:${BASE_USER}" "${HOME}/.KlipperScreen-env"
+rm -rf "${KSENV}"
+python3 -m venv "${KSENV}"
+# aarch64 Bookworm image (CI / Pi 5): use stock PyPI; armv7l would use piwheels upstream.
+if ! "${KSENV}/bin/pip" install --disable-pip-version-check -r "${REQ}"; then
+    "${KSENV}/bin/pip" install --disable-pip-version-check --upgrade pip setuptools wheel
+    "${KSENV}/bin/pip" install --disable-pip-version-check -r "${REQ}" --prefer-binary
 fi
-if [[ -d "${HOME}/.local" ]]; then
-    chown -R "${BASE_USER}:${BASE_USER}" "${HOME}/.local"
+
+groupadd -f klipperscreen
+groupadd -f network
+usermod -aG tty,netdev,network,klipperscreen "${BASE_USER}" 2>/dev/null || true
+
+SERVICE=$(cat "${SVC_SRC}")
+SERVICE=${SERVICE//KS_USER/${BASE_USER}}
+SERVICE=${SERVICE//KS_ENV/${KSENV}}
+SERVICE=${SERVICE//KS_DIR/${KS_DIR}}
+SERVICE=${SERVICE//KS_BACKEND/X}
+printf '%s\n' "${SERVICE}" >/etc/systemd/system/KlipperScreen.service
+
+systemctl_if_exists unmask KlipperScreen.service || true
+systemctl_if_exists daemon-reload || true
+systemctl_if_exists enable KlipperScreen.service || true
+systemctl_if_exists set-default multi-user.target || true
+
+# PolicyKit (optional; skip if pkaction missing)
+if command -v pkaction >/dev/null 2>&1; then
+    POLKIT_VERSION="$(pkaction --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -n1 || true)"
+    if [[ "${POLKIT_VERSION}" = "0.105" ]]; then
+        install -d /etc/polkit-1/localauthority/50-local.d
+        tee /etc/polkit-1/localauthority/50-local.d/20-klipperscreen.pkla >/dev/null <<EOF
+[KlipperScreen]
+Identity=unix-user:${BASE_USER}
+Action=org.freedesktop.login1.power-off;
+ org.freedesktop.login1.power-off-multiple-sessions;
+ org.freedesktop.login1.reboot;
+ org.freedesktop.login1.reboot-multiple-sessions;
+ org.freedesktop.login1.halt;
+ org.freedesktop.login1.halt-multiple-sessions;
+ org.freedesktop.NetworkManager.*
+ResultAny=yes
+EOF
+    elif [[ -d /usr/share/polkit-1/rules.d ]]; then
+        tee /usr/share/polkit-1/rules.d/KlipperScreen.rules >/dev/null <<EOF
+polkit.addRule(function(action, subject) {
+ if (action.id.indexOf("org.freedesktop.NetworkManager.") == 0 && subject.isInGroup("network")) {
+ return polkit.Result.YES;
+ }
+});
+polkit.addRule(function(action, subject) {
+ if ((action.id == "org.freedesktop.login1.power-off" ||
+ action.id == "org.freedesktop.login1.power-off-multiple-sessions" ||
+ action.id == "org.freedesktop.login1.reboot" ||
+ action.id == "org.freedesktop.login1.reboot-multiple-sessions" ||
+ action.id == "org.freedesktop.login1.halt" ||
+ action.id == "org.freedesktop.login1.halt-multiple-sessions" ||
+ action.id.startsWith("org.freedesktop.NetworkManager.")) &&
+ subject.user == "${BASE_USER}") {
+ return polkit.Result.YES;
+ }
+});
+EOF
+    fi
 fi
+
+# Upstream fix_fbturbo: move stray config if package not installed
+if ! dpkg-query -W -f='${Status}' xserver-xorg-video-fbturbo 2>/dev/null | grep -q "ok installed"; then
+    FBCONFIG="/usr/share/X11/xorg.conf.d/99-fbturbo.conf"
+    if [[ -e ${FBCONFIG} ]]; then
+        mv -f "${FBCONFIG}" "/home/${BASE_USER}/99-fbturbo-backup.conf" || true
+    fi
+fi
+
+install -d "/home/${BASE_USER}/.local/share/applications"
+cp -f "${KS_DIR}/scripts/KlipperScreen.desktop" "/home/${BASE_USER}/.local/share/applications/KlipperScreen.desktop"
+install -d /usr/share/icons/hicolor/scalable/apps
+if [[ -f ${KS_DIR}/styles/icon.svg ]]; then
+    cp -f "${KS_DIR}/styles/icon.svg" /usr/share/icons/hicolor/scalable/apps/KlipperScreen.svg
+fi
+
+chown -R "${BASE_USER}:${BASE_USER}" "${KS_DIR}" "${KSENV}" "/home/${BASE_USER}/.local"
 
 if [[ -f /etc/systemd/system/KlipperScreen.service ]]; then
     sed -i 's/\[Service\]/\[Service\]\nStandardOutput=null\nStandardError=null/g' \
