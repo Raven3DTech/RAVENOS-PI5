@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+# Source error handling, leave this in place
+set -xe
+
+# Source CustomPIOS common.sh
+source /common.sh
+install_cleanup_trap
+
+pushd /home/${BASE_USER}
+echo_green "Installing DFU-util build dependencies"
+apt-get update --allow-releaseinfo-change
+apt-get -y install libusb-1.0-0-dev autoconf pandoc
+echo_green "Cloning and building DFU-util"
+# Prefer GitLab (git:// SourceForge is often blocked in CI/chroots)
+git clone https://gitlab.com/dfu-util/dfu-util.git || \
+    git clone git://git.code.sf.net/p/dfu-util/dfu-util
+pushd /home/${BASE_USER}/dfu-util
+./autogen.sh
+./configure
+make install
+echo_green "Removing DFU-util build dependencies"
+apt-get -y purge pandoc
+popd
+popd

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Klipper secondary MCU on the same Pi (Linux process build)
+# RatOS uses board-specific Kconfig from the RatOS config repo; KlipperPi uses
+# Klipper's stock linux process preset (see Klipper test/configs/linuxprocess.config).
+:

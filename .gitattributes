@@ -1,0 +1,3 @@
+# CustomPiOS module scripts must use LF inside the Linux chroot
+src/modules/**/start_chroot_script text eol=lf
+src/modules/**/config text eol=lf

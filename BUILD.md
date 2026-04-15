@@ -271,6 +271,10 @@ Pi 5 (Bookworm 64-bit arm64)
 │   ├── moonraker.service        :  moonraker.py → :7125
 │   ├── nginx.service            :  → :80 (Mainsail) + proxy :7125
 │   ├── ratos-configurator.service: next start → :3000
+│   ├── crowsnest.service         :  webcam streaming
+│   ├── sonar.service             :  WiFi keepalive (optional)
+│   ├── KlipperScreen.service     :  touchscreen UI (if installed)
+│   ├── klipper-mcu.service       :  Pi as secondary MCU (Linux process build)
 │   ├── avahi-daemon.service     :  mDNS → klipperpi.local
 │   └── klipperpi-firstboot.service (runs once, then disables itself)
 │
@@ -279,6 +283,10 @@ Pi 5 (Bookworm 64-bit arm64)
 │   ├── moonraker/               Moonraker source + moonraker-env/
 │   ├── mainsail/                Mainsail web app (symlinked to /var/www/mainsail)
 │   ├── ratos-configurator/      Next.js app
+│   ├── crowsnest/               webcam stack (if module enabled)
+│   ├── sonar/                   WiFi keepalive (if module enabled)
+│   ├── KlipperScreen/           touchscreen UI (if module enabled)
+│   ├── moonraker-timelapse/     timelapse plugin source (if module enabled)
 │   ├── scripts/                 firstboot + helper scripts
 │   └── printer_data/
 │       ├── config/              printer.cfg, moonraker.conf, RatOS/

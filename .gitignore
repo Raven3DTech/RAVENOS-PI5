@@ -18,3 +18,8 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Local reference clones (not part of the image recipe)
+.ratos-ref/
+.klipper-ref/
+.timelapse-ref/

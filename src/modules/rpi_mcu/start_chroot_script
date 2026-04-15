@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Build and install Klipper "Linux process" MCU (klipper_mcu) for using the Pi as [mcu]
+set -ex
+
+source /common.sh
+install_cleanup_trap
+
+echo_green "Building Klipper Linux-process MCU (klipper_mcu) ..."
+
+sudo -u "${BASE_USER}" bash -c "cat > /home/${BASE_USER}/klipper/.config <<'EOF'
+CONFIG_MACH_LINUX=y
+EOF
+"
+
+pushd "/home/${BASE_USER}/klipper" &>/dev/null
+sudo -u "${BASE_USER}" make olddefconfig
+sudo -u "${BASE_USER}" make clean
+sudo -u "${BASE_USER}" make -j"$(nproc)"
+
+# Installs out/klipper.elf -> /usr/local/bin/klipper_mcu
+make flash
+
+sudo -u "${BASE_USER}" cp "./scripts/klipper-mcu.service" /etc/systemd/system/klipper-mcu.service
+systemctl_if_exists enable klipper-mcu.service
+
+chown -R "${BASE_USER}:${BASE_USER}" "/home/${BASE_USER}/klipper"
+popd &>/dev/null
+
+echo_green "klipper-mcu.service enabled"

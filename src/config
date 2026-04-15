@@ -3,9 +3,10 @@
 # Module order matters; each module can depend on the previous.
 # klipper must come before moonraker, moonraker before mainsail,
 # mainsail before ratos-configurator.
+# timelapse must follow moonraker (links into moonraker/components).
 
 # Modules (comma-separated; CustomPiOS v2 strips spaces, so use commas)
-export MODULES="klipper,moonraker,mainsail,ratos-configurator"
+export MODULES="klipper,dfu-util,moonraker,timelapse,mainsail,crowsnest,sonar,klipperscreen,rpi_mcu,ratos-configurator"
 
 # Board: raspberrypiarm64 = RPi OS Lite arm64 (Pi 4 / Pi 5)
 export BASE_BOARD="raspberrypiarm64"

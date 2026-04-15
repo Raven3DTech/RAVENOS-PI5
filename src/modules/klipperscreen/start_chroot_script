@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Installs RatOS
+# GPL V3
+########
+
+
+# Source error handling, leave this in place
+set -x
+set -e
+
+source /common.sh
+install_cleanup_trap
+
+# Add root rights to X11
+echo_green "Adding root rights to X11.."
+mkdir -p /etc/X11
+touch /etc/X11/Xwrapper.config
+echo needs_root_rights=yes>>/etc/X11/Xwrapper.config
+
+echo_green "Installing KlipperScreen"
+
+cd /home/${BASE_USER}
+sudo -u "${BASE_USER}" git clone -b "${KLIPPERSCREEN_BRANCH}" --depth 1 \
+    "${KLIPPERSCREEN_SHIP}" KlipperScreen
+cd /home/${BASE_USER}/KlipperScreen
+sudo -u "${BASE_USER}" NETWORK="skipnetworkmanagerinstall" ./scripts/KlipperScreen-install.sh
+
+# Mute output from klipperscreen service
+sudo sed -i 's/\[Service\]/\[Service\]\n\StandardOutput=null\nStandardError=null/g' /etc/systemd/system/KlipperScreen.service
+
+systemctl_if_exists stop KlipperScreen || true

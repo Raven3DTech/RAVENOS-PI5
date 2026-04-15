@@ -16,6 +16,7 @@
 - Raspberry Pi 4 ✅
 
 ### Features
+- Optional extras (from [RatOS v2.1.x modules](https://github.com/Rat-OS/RatOS/tree/v2.1.x/src/modules), adapted for KlipperPi): **crowsnest**, **sonar**, **moonraker-timelapse**, **KlipperScreen**, **dfu-util** (source build), **klipper-mcu** (Linux-process secondary MCU; not the RatOS board Kconfig bundle)
 - Full Klipper + Moonraker + Mainsail stack
 - Configurator accessible from Mainsail sidebar
 - Board detection and automatic firmware flashing

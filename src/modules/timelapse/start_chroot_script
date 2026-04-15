@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# moonraker-timelapse — adapted from RatOS/MainsailOS (no `ratos extensions` CLI)
+set -Eex
+
+export LC_ALL=C
+export DEBIAN_FRONTEND=noninteractive
+
+source /common.sh
+install_cleanup_trap
+
+apt-get update --allow-releaseinfo-change
+apt-get install -y --no-install-recommends ffmpeg git
+
+echo_green "Cloning moonraker-timelapse ..."
+pushd "/home/${BASE_USER}" &>/dev/null
+if [[ -d "${TIMELAPSE_SRC_DIR}" ]]; then
+    rm -rf "${TIMELAPSE_SRC_DIR}"
+fi
+sudo -u "${BASE_USER}" git clone -b "${TIMELAPSE_BRANCH}" --depth 1 \
+    "${TIMELAPSE_REPO}" "${TIMELAPSE_SRC_DIR}"
+
+echo_green "Linking Moonraker component + Klipper macro ..."
+MOONRAKER_COMPONENTS="/home/${BASE_USER}/moonraker/moonraker/components"
+sudo -u "${BASE_USER}" ln -sf "${TIMELAPSE_SRC_DIR}/component/timelapse.py" \
+    "${MOONRAKER_COMPONENTS}/timelapse.py"
+sudo -u "${BASE_USER}" ln -sf "${TIMELAPSE_SRC_DIR}/klipper_macro/timelapse.cfg" \
+    "/home/${BASE_USER}/printer_data/config/timelapse.cfg"
+
+sudo -u "${BASE_USER}" mkdir -p "/home/${BASE_USER}/printer_data/timelapse"
+
+popd &>/dev/null
+
+echo_green "moonraker-timelapse install done"
