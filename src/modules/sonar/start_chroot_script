@@ -42,7 +42,13 @@ check_install_pkgs iputils-ping
 ## Step 4: Move to sonar as working directory
 pushd "/home/${BASE_USER}/sonar" &> /dev/null || exit 1
 
+## Upstream install.sh does not mkdir SONAR_SYSTEMD_PATH; cp sonar.env fails if missing.
+sudo -u "${BASE_USER}" mkdir -p "${SONAR_SYSTEMD_PATH}"
+
 ## Step 5: Run sonar install routine
+# install.sh is a child of `make`; export paths so tools/install.sh sees them reliably.
+export SONAR_CONFIG_PATH SONAR_LOG_PATH SONAR_SYSTEMD_PATH SONAR_DEFAULT_CONF
+export SONAR_ADD_SONAR_MOONRAKER SONAR_MOONRAKER_CONF_PATH SONAR_UNATTENDED
 echo_green "Launch sonar install routine ..."
 make install
 
