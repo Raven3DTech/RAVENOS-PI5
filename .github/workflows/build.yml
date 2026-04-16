@@ -132,9 +132,12 @@ jobs:
             fi
             echo "Disk after PiShrink:"
             df -h
+            # PiShrink runs as root; workspace dir often stays root-owned — runner cannot create *.xz here.
+            sudo chown "$USER:$USER" "${DEST}" "${WORKSPACE}" 2>/dev/null || true
             echo "Compressing heavily with xz..."
-            # -T0 uses all available CPU threads for max speed
-            xz -T0 -z -9 "${DEST}"
+            # -T0 uses all available CPU threads for max speed; sudo so output is writable under root-owned paths
+            sudo xz -T0 -z -9 "${DEST}"
+            sudo chown "$USER:$USER" "${DEST}.xz"
             DEST="${DEST}.xz"
           fi
 
