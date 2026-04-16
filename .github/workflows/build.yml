@@ -66,6 +66,20 @@ jobs:
             BASE_ZIP_IMG=$GITHUB_WORKSPACE/base-image-cache/raspios_lite_arm64_latest.img.xz \
             bash $GITHUB_WORKSPACE/CustomPiOS/src/build
 
+      # CustomPiOS already unmounts on success; on failure the ERR trap runs unmount_image force.
+      # If anything still holds $BASE_MOUNT_PATH (qemu/apt/dpkg), plain umount can fail. Lazy
+      # recursive unmount + loop detach keeps the runner clean and avoids "device is busy" noise.
+      - name: Release image mounts and loop devices
+        if: always()
+        run: |
+          M="${GITHUB_WORKSPACE}/KlipperPi/src/workspace/mount"
+          sync
+          if sudo mount 2>/dev/null | grep -qF "${M}"; then
+            echo "Lazy-unmounting ${M} ..."
+            sudo umount -R -l "${M}" 2>/dev/null || true
+          fi
+          sudo losetup -D 2>/dev/null || true
+
       - name: Upload build diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v4

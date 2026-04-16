@@ -249,6 +249,24 @@ All components update through Mainsail's built-in Update Manager:
 
 ## Troubleshooting
 
+### Image build logs: long "Unmounting …/mount/…" then `BUILD FAILED`
+
+CustomPiOS runs **`unmount_image`** whenever a module script errors (`set -e`). The lines that unmount `…/mount/sys`, `proc`, `dev`, `boot`, etc. are **cleanup after the real failure**, not the root cause. Scroll **up** in `build.log` (or the Actions step log) for the first **`cp:` / `pip` / `apt` / `make`** error *before* that block.
+
+### Image build: `umount: … target is busy` (local / WSL)
+
+Something still has the chroot open (file descriptor, shell cwd, `apt`, `qemu`). From the host:
+
+```bash
+sync
+M=/path/to/KlipperPi/src/workspace/mount   # adjust to your clone
+sudo lsof +D "$M" 2>/dev/null | head
+sudo umount -R -l "$M"   # lazy recursive unmount; safe if paths match CustomPiOS
+sudo losetup -D
+```
+
+Then `make clean` or remove `src/workspace` only after mounts are gone. If unmount still fails, reboot the VM/WSL session and delete the workspace folder before rebuilding.
+
 ### Mainsail not loading
 ```bash
 sudo systemctl status nginx
