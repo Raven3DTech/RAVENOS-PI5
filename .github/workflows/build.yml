@@ -205,7 +205,7 @@ jobs:
             |---|---|---|---|
             | SSH | `ssh pi@r3dtospi5.local` | `pi` | `raspberry` |
             | Mainsail | `http://r3dtospi5.local` | — | — |
-            | Configurator | `http://r3dtospi5.local:3000` | — | — |
+            | Configurator | `http://r3dtospi5.local/configure` | — | — |
 
             > ⚠️ Change the default password after first login: `passwd pi`
           draft: false

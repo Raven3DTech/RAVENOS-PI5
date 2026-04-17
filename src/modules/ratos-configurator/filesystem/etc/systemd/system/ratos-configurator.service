@@ -7,10 +7,10 @@ Wants=moonraker.service
 [Service]
 Type=simple
 User=pi
-WorkingDirectory=/home/pi/ratos-configurator
-EnvironmentFile=/home/pi/ratos-configurator/.env.local
+WorkingDirectory=/home/pi/ratos-configurator/src
+EnvironmentFile=/home/pi/ratos-configurator/src/.env.local
 ExecStart=/usr/bin/node \
-    /home/pi/ratos-configurator/node_modules/.bin/next \
+    /home/pi/ratos-configurator/src/node_modules/.bin/next \
     start \
     --port 3000 \
     --hostname 0.0.0.0

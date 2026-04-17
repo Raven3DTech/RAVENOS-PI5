@@ -60,9 +60,12 @@ sed -i "s/${DEFAULT_HOST}/${NEW_HOSTNAME}/g" /etc/hosts
 sed -i "s/${DEFAULT_HOST}.local/${NEW_HOSTNAME}.local/g" \
     /home/pi/printer_data/config/moonraker.conf
 
-# Update RatOS configurator .env.local
-sed -i "s/${DEFAULT_HOST}.local/${NEW_HOSTNAME}.local/g" \
-    /home/pi/ratos-configurator/.env.local
+# Update RatOS configurator .env.local (root copy optional; src is canonical)
+for _cfg_env in /home/pi/ratos-configurator/.env.local /home/pi/ratos-configurator/src/.env.local; do
+    if [ -f "${_cfg_env}" ]; then
+        sed -i "s/${DEFAULT_HOST}.local/${NEW_HOSTNAME}.local/g" "${_cfg_env}"
+    fi
+done
 
 if [ -f /home/pi/mainsail/config.json ]; then
     sed -i "s/${DEFAULT_HOST}.local/${NEW_HOSTNAME}.local/g" /home/pi/mainsail/config.json
@@ -133,6 +136,6 @@ systemctl is-active --quiet ssh || systemctl start ssh 2>/dev/null || true
 echo "============================================"
 echo "R3DTOS PI5 First Boot Complete: $(date)"
 echo "Access Mainsail at: http://${NEW_HOSTNAME}.local"
-echo "Access Configurator at: http://${NEW_HOSTNAME}.local:3000"
-echo "On fallback hotspot Wi-Fi: http://192.168.50.1 and http://192.168.50.1:3000"
+echo "Access Configurator at: http://${NEW_HOSTNAME}.local/configure (same as stock RatOS; direct Next: :3000/configure)"
+echo "On fallback hotspot Wi-Fi: http://192.168.50.1 and http://192.168.50.1/configure"
 echo "============================================"

@@ -137,15 +137,15 @@ Replace `/dev/sdX` with your actual device (check with `lsblk`).
 
 ## First Boot
 
-1. Insert the media into your Pi 5
-2. Connect to your network via **Ethernet** (WiFi can be set up afterward)
-3. Wait ~2 minutes for first-boot setup to complete
-4. Browse to `http://r3dtospi5.local` — Mainsail loads
-5. Click **Configurator** in the left sidebar (RatOS Configurator)
-6. Follow the wizard to detect and flash your 3D printer board
+Match the [RatOS 2.1.x installation](https://os.ratrig.com/docs/installation/) flow: **network/hostname in the Configurator first** (`/configure`), then **Mainsail** for updates, then the rest of the wizard. Klipper + Moonraker + web services start together on boot (Klipper may error until hardware is set up; Moonraker should still be up for Mainsail).
 
-> **Tip:** If `r3dtospi5.local` doesn't resolve, try the IP address shown
-> in your router's DHCP table, or connect a monitor to the Pi.
+1. Insert the media into your Pi 5 and wait for first-boot (~2 minutes).
+2. **Wi‑Fi path:** join hotspot **`r3dtospi5`** / **`raspberry`**, open **`http://192.168.50.1/configure`**. **Ethernet:** open **`http://r3dtospi5.local/configure`** (hostname may get a suffix after first boot).
+3. Complete Wi‑Fi + hostname; reboot onto your LAN when prompted (upstream pattern).
+4. Open **`http://<hostname>.local`** or **`http://<hostname>.local/config`** for **Mainsail** (port 80; `/config` redirects to `/` like RatOS docs). Run **Update Manager** before continuing the wizard.
+5. Continue in **Configurator** at **`http://<hostname>.local/configure`** (or the Mainsail sidebar link) for board detection and hardware steps.
+
+> **Tip:** nginx proxies **`/configure`** to Next on **:3000** (stock RatOS URL shape). Direct **`http://<host>:3000/configure`** still works. If `.local` fails, use the Pi’s IP from your router.
 
 ---
 
@@ -157,6 +157,7 @@ The image includes [RatOS-configuration](https://github.com/Rat-OS/RatOS-configu
 |--------|---------------------|
 | **OS** | Raspberry Pi OS Lite **Bookworm arm64** — same Debian family RatOS targets; no Armbian/CB1-specific paths. |
 | **User / paths** | RatOS scripts often assume `/home/pi`; R3DTOS PI5 uses `BASE_USER=pi`, so paths align. |
+| **Configurator on :80 (RatOS parity)** | Stock RatOS uses **`http://<host>/configure`**. R3DTOS PI5 **nginx** reverse-proxies **`/configure/*`** to Next.js on **127.0.0.1:3000** and redirects **`/config`** → **`/`** so RatOS install-doc Mainsail links work. The Configurator’s **`NEXT_PUBLIC_MOONRAKER_URL`** targets **`http://<host>`** so the browser hits Moonraker through the same nginx site. |
 | **Moonraker ↔ Klipper socket** | R3DTOS PI5 keeps `klippy_uds_address: /tmp/klippy_uds` in the **live** `moonraker.conf`. The `moonraker.conf` file **inside** the RatOS-configuration repo is a RatOS reference layout (e.g. `~/printer_data/comms/klippy.sock`); it is **not** copied over the system config, so Moonraker and `klipper.service` stay in sync. |
 | **`scripts/ratos-install.sh`** | Upstream expects to be run as **`pi` (not root)**, replaces `printer.cfg` from RatOS templates, installs many udev symlinks, and calls the **`ratos` CLI** (Configurator API) to register Klipper extensions. The image build **only clones** the repo and installs `python3-matplotlib` / `curl`; run `ratos-install.sh` manually after first boot if you want the full RatOS wiring. |
 | **Moonraker Update Manager** | `[update_manager ratos_configuration]` tracks the Git repo **without** `install_script`, so updates do not automatically run `ratos-install.sh` (avoids overwriting the R3DTOS PI5 placeholder `printer.cfg` on every update). |
@@ -233,7 +234,7 @@ Use this when the Pi **never reaches a login prompt** or **shows no boot progres
 |---|---|---|---|
 | SSH | `ssh pi@r3dtospi5.local` | `pi` | `raspberry` |
 | Mainsail | `http://r3dtospi5.local` | — | — |
-| Configurator | `http://r3dtospi5.local:3000` | — | — |
+| Configurator | `http://r3dtospi5.local/configure` | — | — |
 
 > **Security:** Change the default SSH password immediately:
 > ```bash
@@ -377,7 +378,7 @@ Pi 5 (Bookworm 64-bit arm64)
 │   ├── NetworkManager.service   :  Ethernet + WiFi (from base Pi OS image)
 │   ├── autohotspot.service      :  RatOS-style fallback AP if no known WiFi (hostapd + dnsmasq)
 │   ├── nginx.service            :  → :80 (Mainsail) + proxy :7125
-│   ├── ratos-configurator.service: next start → :3000
+│   ├── ratos-configurator.service: next start → :3000; nginx /configure → :3000
 │   ├── crowsnest.service         :  webcam streaming
 │   ├── sonar.service             :  WiFi keepalive (optional)
 │   ├── KlipperScreen.service     :  touchscreen UI (if installed)
