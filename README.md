@@ -12,6 +12,8 @@ Includes:
 
 Targets **Raspberry Pi 5** running **Bookworm 64-bit**, but is compatible with Pi 4 as well.
 
+**Monorepo / Windows / clone layout:** see **[`docs/WORKSPACE.md`](docs/WORKSPACE.md)** (R3DTech Configurator sibling projects, `CustomPiOS` path, optional Windows junction, CI vs local build).
+
 ---
 
 ## Requirements
@@ -38,7 +40,7 @@ sudo apt-get install -y \
 Use the folder name **`R3DTOS-PI5`** so the CustomPiOS output image is named **`R3DTOS-PI5.img`** (the name matches the parent directory of `src/`).
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/R3DTOS-PI5.git
+git clone https://github.com/Raven3DTech/KlipperPi5.git R3DTOS-PI5
 git clone https://github.com/guysoft/CustomPiOS.git
 ```
 

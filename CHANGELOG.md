@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Changed
+- **Docs:** add **`docs/WORKSPACE.md`** (R3DTech Configurator layout, `CustomPiOS` sibling, Windows junction, CI vs local); README links to it; clone examples use **`https://github.com/Raven3DTech/KlipperPi5.git`** with target directory **`R3DTOS-PI5`** for correct **`R3DTOS-PI5.img`** output.
 - **Branding:** product name **R3DTOS PI5** (RatOS v2.1.x stack port for Raspberry Pi OS / Pi 5). Default hostname **`r3dtospi5`**, mDNS **`r3dtospi5.local`**, fallback hotspot SSID **`r3dtospi5`**, first-boot service and scripts renamed to **`r3dtospi5-firstboot`** (see README).
 - **hotspot:** install `autohotspot.service` but **do not** enable it in the chroot; **`r3dtospi5-firstboot.sh`** enables and **starts** it once after first boot (oneshot) so **NetworkManager** is less likely to conflict on a cold Pi 5 boot, without requiring a second reboot for the AP.
 - **CI:** `workflow_dispatch` input **`skip_pishrink`** — skip PiShrink for a **much larger** artifact when debugging “image will not boot” after shrink.

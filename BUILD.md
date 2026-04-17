@@ -58,7 +58,7 @@ The **`hotspot`** module follows [Rat-OS/RatOS `v2.1.x` `hotspot`](https://githu
 ```bash
 cd ~
 git clone https://github.com/guysoft/CustomPiOS.git
-git clone https://github.com/YOUR_USERNAME/R3DTOS-PI5.git
+git clone https://github.com/Raven3DTech/KlipperPi5.git R3DTOS-PI5
 ```
 
 ### 2. Download the base Raspberry Pi OS image
