@@ -41,3 +41,5 @@ Clone with an explicit directory name so the image filename matches docs:
 ```bash
 git clone https://github.com/Raven3DTech/R3DTOS-PI5.git R3DTOS-PI5
 ```
+
+**Existing clones** (remote was `KlipperPi5`): `git remote set-url origin https://github.com/Raven3DTech/R3DTOS-PI5.git`
