@@ -79,10 +79,18 @@ EOF
 echo "Hostname set to: ${NEW_HOSTNAME}"
 
 # ── Regenerate SSH host keys ──────────────────────────────────
+# Never leave the system without host keys: with `set -e`, a failed
+# `dpkg-reconfigure` after `rm` would exit the script and sshd would
+# refuse all connections until fixed from local console.
 echo "[4/7] Regenerating SSH host keys..."
-rm -f /etc/ssh/ssh_host_*
-dpkg-reconfigure -f noninteractive openssh-server
-systemctl restart ssh
+rm -f /etc/ssh/ssh_host_* 2>/dev/null || true
+if ! ssh-keygen -A; then
+    echo "WARN: ssh-keygen -A failed; attempting dpkg-reconfigure..."
+    dpkg-reconfigure -f noninteractive openssh-server || true
+fi
+systemctl enable ssh 2>/dev/null || true
+systemctl enable ssh.socket 2>/dev/null || true
+systemctl restart ssh 2>/dev/null || systemctl start ssh 2>/dev/null || true
 
 # ── Set correct ownership on printer_data ────────────────────
 echo "[5/7] Setting file ownership..."
@@ -117,6 +125,10 @@ fi
 
 # ── Disable this service so it never runs again ───────────────
 systemctl disable r3dtospi5-firstboot.service
+
+# ── SSH safety net (if a later step failed, ssh may still need a kick) ─
+systemctl enable ssh ssh.socket 2>/dev/null || true
+systemctl is-active --quiet ssh || systemctl start ssh 2>/dev/null || true
 
 echo "============================================"
 echo "R3DTOS PI5 First Boot Complete: $(date)"

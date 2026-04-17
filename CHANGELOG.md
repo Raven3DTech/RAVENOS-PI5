@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Changed
+- **First boot (`r3dtospi5-firstboot.sh`):** regenerate SSH host keys with **`ssh-keygen -A`** (fallback to `dpkg-reconfigure`) so a failed non-interactive reconfigure cannot leave **`/etc/ssh`** empty under **`set -e`** — which previously could brick **SSH** (connection refused) until reflashed. **`systemctl enable ssh` / `ssh.socket`** and a final **start-if-inactive** guard added.
 - **Repository & docs:** GitHub remote is **`Raven3DTech/R3DTOS-PI5`** (renamed from `KlipperPi5`). **`docs/WORKSPACE.md`** covers monorepo layout, `CustomPiOS` sibling, Windows junction, and CI vs local; README/BUILD clone examples use **`https://github.com/Raven3DTech/R3DTOS-PI5.git`** with directory **`R3DTOS-PI5`** for **`R3DTOS-PI5.img`**.
 - **Branding:** product name **R3DTOS PI5** (RatOS v2.1.x stack port for Raspberry Pi OS / Pi 5). Default hostname **`r3dtospi5`**, mDNS **`r3dtospi5.local`**, fallback hotspot SSID **`r3dtospi5`**, first-boot service and scripts renamed to **`r3dtospi5-firstboot`** (see README).
 - **hotspot:** install `autohotspot.service` but **do not** enable it in the chroot; **`r3dtospi5-firstboot.sh`** enables and **starts** it once after first boot (oneshot) so **NetworkManager** is less likely to conflict on a cold Pi 5 boot, without requiring a second reboot for the AP.
