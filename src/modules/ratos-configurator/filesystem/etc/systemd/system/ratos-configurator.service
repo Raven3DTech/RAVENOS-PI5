@@ -1,5 +1,5 @@
 [Unit]
-Description=KlipperPi Configurator
+Description=R3DTOS PI5 RatOS Configurator
 Documentation=https://github.com/Rat-OS/RatOS-configurator
 After=network.target moonraker.service
 Wants=moonraker.service

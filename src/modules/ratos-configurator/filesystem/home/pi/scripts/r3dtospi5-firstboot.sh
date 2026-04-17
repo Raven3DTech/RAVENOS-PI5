@@ -1,7 +1,8 @@
 #!/bin/bash
 # ============================================================
-# KlipperPi — First Boot Setup Script
-# Runs once on first boot via the klipperpi-firstboot service.
+# R3DTOS PI5 — First Boot Setup Script
+# Runs once on first boot via the r3dtospi5-firstboot service.
+# Port of RatOS v2.1.x stack for Raspberry Pi OS / Pi 5 (see README).
 # Handles things that cannot be done inside the chroot build:
 #   - Expand filesystem
 #   - Set machine hostname uniquely
@@ -10,11 +11,14 @@
 # ============================================================
 set -e
 
-LOG=/var/log/klipperpi-firstboot.log
+# Short hostname baked into the image (must match BASE_HOSTNAME in src/config).
+DEFAULT_HOST="r3dtospi5"
+
+LOG=/var/log/r3dtospi5-firstboot.log
 exec > >(tee -a ${LOG}) 2>&1
 
 echo "============================================"
-echo "KlipperPi First Boot Setup"
+echo "R3DTOS PI5 First Boot Setup"
 echo "Started: $(date)"
 echo "============================================"
 
@@ -33,7 +37,7 @@ raspi-config --expand-rootfs || true
 
 # ── Set unique hostname ───────────────────────────────────────
 # Appends last 4 chars of Pi serial for uniqueness on networks
-# with multiple KlipperPi instances.
+# with multiple R3DTOS PI5 instances.
 echo "[3/7] Setting hostname..."
 SERIAL=$(grep -m1 '^Serial' /proc/cpuinfo 2>/dev/null | awk '{print $3}' | tail -c 5 | head -c 4)
 if [ -z "${SERIAL}" ] || [ "${SERIAL}" = "0000" ]; then
@@ -44,25 +48,33 @@ if [ -z "${SERIAL}" ] || [ "${SERIAL}" = "0000" ]; then
     fi
 fi
 if [ -n "${SERIAL}" ] && [ "${SERIAL}" != "0000" ]; then
-    NEW_HOSTNAME="klipperpi-${SERIAL}"
+    NEW_HOSTNAME="${DEFAULT_HOST}-${SERIAL}"
 else
-    NEW_HOSTNAME="klipperpi"
+    NEW_HOSTNAME="${DEFAULT_HOST}"
 fi
 
 echo "${NEW_HOSTNAME}" > /etc/hostname
-sed -i "s/klipperpi/${NEW_HOSTNAME}/g" /etc/hosts
+sed -i "s/${DEFAULT_HOST}/${NEW_HOSTNAME}/g" /etc/hosts
 
 # Update moonraker.conf with new hostname
-sed -i "s/klipperpi.local/${NEW_HOSTNAME}.local/g" \
+sed -i "s/${DEFAULT_HOST}.local/${NEW_HOSTNAME}.local/g" \
     /home/pi/printer_data/config/moonraker.conf
 
 # Update RatOS configurator .env.local
-sed -i "s/klipperpi.local/${NEW_HOSTNAME}.local/g" \
+sed -i "s/${DEFAULT_HOST}.local/${NEW_HOSTNAME}.local/g" \
     /home/pi/ratos-configurator/.env.local
 
 if [ -f /home/pi/mainsail/config.json ]; then
-    sed -i "s/klipperpi.local/${NEW_HOSTNAME}.local/g" /home/pi/mainsail/config.json
+    sed -i "s/${DEFAULT_HOST}.local/${NEW_HOSTNAME}.local/g" /home/pi/mainsail/config.json
 fi
+
+# Hotspot AP uses 192.168.50.1; dnsmasq hands clients DHCP but they need this name
+# to resolve to the Pi so Mainsail (Moonraker host from config.json) connects reliably.
+mkdir -p /etc/dnsmasq.d
+cat > /etc/dnsmasq.d/r3dtospi5-hotspot-local.conf << EOF
+# Written by r3dtospi5-firstboot — autohotspot wlan0 subnet
+address=/${NEW_HOSTNAME}.local/192.168.50.1
+EOF
 
 echo "Hostname set to: ${NEW_HOSTNAME}"
 
@@ -86,7 +98,7 @@ systemctl enable avahi-daemon
 systemctl start avahi-daemon
 
 # ── Start all services ────────────────────────────────────────
-echo "[7/7] Starting KlipperPi services..."
+echo "[7/7] Starting R3DTOS PI5 services..."
 systemctl daemon-reload
 systemctl start klipper
 sleep 3
@@ -95,11 +107,20 @@ sleep 3
 systemctl start ratos-configurator
 systemctl restart nginx
 
+# ── Enable auto-hotspot after first boot (avoids fighting NM during initial bring-up) ─
+if systemctl list-unit-files autohotspot.service 2>/dev/null | grep -q autohotspot.service; then
+  echo "[post] Enabling autohotspot.service for subsequent boots..."
+  systemctl enable autohotspot.service 2>/dev/null || true
+  # Oneshot unit — start once now so fallback AP works without an extra reboot.
+  systemctl start autohotspot.service 2>/dev/null || true
+fi
+
 # ── Disable this service so it never runs again ───────────────
-systemctl disable klipperpi-firstboot.service
+systemctl disable r3dtospi5-firstboot.service
 
 echo "============================================"
-echo "KlipperPi First Boot Complete: $(date)"
+echo "R3DTOS PI5 First Boot Complete: $(date)"
 echo "Access Mainsail at: http://${NEW_HOSTNAME}.local"
 echo "Access Configurator at: http://${NEW_HOSTNAME}.local:3000"
+echo "On fallback hotspot Wi-Fi: http://192.168.50.1 and http://192.168.50.1:3000"
 echo "============================================"

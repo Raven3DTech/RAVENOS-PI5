@@ -55,6 +55,8 @@ fi
 
 chmod +x /usr/bin/autohotspotN /usr/bin/add_masquerade /usr/bin/make_sure_master 2>/dev/null || true
 
-systemctl enable autohotspot.service
+# Do NOT enable here: autohotspot + NetworkManager on first cold boot can stall or break bring-up.
+# r3dtospi5-firstboot.sh enables this unit after expand-rootfs / SSH / core services (see BUILD.md).
+systemctl disable autohotspot.service 2>/dev/null || true
 
-echo_green "hotspot: autohotspot.service enabled (see BUILD.md for NM / dhcpcd notes)"
+echo_green "hotspot: hostapd/dnsmasq/autohotspot installed; unit enabled after first boot (see BUILD.md)"

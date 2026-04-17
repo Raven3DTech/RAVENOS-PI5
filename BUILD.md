@@ -1,4 +1,6 @@
-# KlipperPi — Build Guide
+# R3DTOS PI5 — Build Guide
+
+**R3DTOS PI5** is a **port of the RatOS v2.1.x** printer stack (Moonraker, Mainsail, RatOS Configurator, RatOS-configuration, RatOS-derived hotspot) to **Raspberry Pi OS Lite arm64** for **Raspberry Pi 5** (Pi 4 compatible). It is **not** the upstream RatOS CB1 image; it tracks RatOS behaviour where Pi OS allows, with Pi‑5‑specific fixes called out below.
 
 This document covers the full build process, troubleshooting, and how to
 customise the image.
@@ -26,7 +28,7 @@ sudo apt-get install -y \
 Allow at least **25 GB free** on the build machine — the base image grows a lot once the root
 partition is enlarged for the full module stack, and the workspace holds intermediate files.
 
-### Why KlipperPi “feels huge” while RatOS / other images look smaller
+### Why R3DTOS PI5 “feels huge” while RatOS / other images look smaller
 
 - **Build-time enlarge** (`BASE_IMAGE_ENLARGEROOT` in `src/config`) adds **empty MiB** on the root partition so the chroot can install a **full** stack (RatOS Configurator `pnpm`, KlipperScreen, camera-streamer, etc.) without **`ENOSPC`**. That makes the **raw `.img` during the build** large; **PiShrink + `xz`** in CI then shrink and compress, so the **downloaded `.img.xz`** is usually **much smaller** than the workspace peak.
 - **Upstream RatOS** images often combine a **different base**, **fewer in-image dev steps**, and a **smaller enlarge** in their recipe—so their **pre-shrink** file can start smaller. You can **try lowering** `BASE_IMAGE_ENLARGEROOT` in **2–4 GiB steps** only after CI proves the install still fits.
@@ -38,7 +40,8 @@ The **`hotspot`** module follows [Rat-OS/RatOS `v2.1.x` `hotspot`](https://githu
 
 - **NetworkManager:** Pi OS Lite **Bookworm+** often uses **NetworkManager** for Wi‑Fi. `autohotspotN` was written around **wpa_supplicant + dhcpcd**. If the AP does not come up or Wi‑Fi flaps, use **Ethernet** for first setup, or plan a **NM-native** hotspot later—this port **does not blank `/etc/network/interfaces` when `network-manager` is installed** (unlike stock RatOS) to avoid breaking NM-managed installs.
 - **Ethernet interface:** many Pis use **`end0`** instead of **`eth0`**; the module **patches `autohotspotN`** when `end0` exists.
-- Defaults: SSID **`KlipperPi5`**, WPA passphrase **`raspberry`**, channel **`6`** — override via `HOTSPOT_NAME` / `HOTSPOT_PASSWORD` / `HOTSPOT_CHANNEL` in `src/modules/hotspot/config` or `config.local`.
+- Defaults: SSID **`r3dtospi5`**, WPA passphrase **`raspberry`**, channel **`6`** — override via `HOTSPOT_NAME` / `HOTSPOT_PASSWORD` / `HOTSPOT_CHANNEL` in `src/modules/hotspot/config` or `config.local`.
+- **First boot:** `autohotspot.service` is **not** enabled during the image build. **`r3dtospi5-firstboot.sh`** enables it **after** rootfs expand, hostname, SSH keys, and core services, then runs **`systemctl start autohotspot.service`** once (oneshot) so the fallback AP works **without** an extra reboot, while still avoiding autohotspot during the **initial** cold boot before firstboot runs.
 
 ---
 
@@ -49,19 +52,19 @@ The **`hotspot`** module follows [Rat-OS/RatOS `v2.1.x` `hotspot`](https://githu
 ```
 ~/
 ├── CustomPiOS/     ← https://github.com/guysoft/CustomPiOS
-└── KlipperPi/      ← this repo
+└── R3DTOS-PI5/     ← this repo (clone folder; CustomPiOS names `.img` after this folder)
 ```
 
 ```bash
 cd ~
 git clone https://github.com/guysoft/CustomPiOS.git
-git clone https://github.com/YOUR_USERNAME/KlipperPi.git
+git clone https://github.com/YOUR_USERNAME/R3DTOS-PI5.git
 ```
 
 ### 2. Download the base Raspberry Pi OS image
 
 ```bash
-cd ~/KlipperPi
+cd ~/R3DTOS-PI5
 make download-image
 ```
 
@@ -77,10 +80,10 @@ wget -c https://downloads.raspberrypi.org/raspios_lite_arm64_latest \
 
 ### 3. Update CustomPiOS paths
 
-This links CustomPiOS scripts into the KlipperPi source tree:
+This links CustomPiOS scripts into the R3DTOS PI5 source tree:
 
 ```bash
-cd ~/KlipperPi
+cd ~/R3DTOS-PI5
 make update-paths
 ```
 
@@ -93,14 +96,14 @@ cd src
 ### 4. (Optional) Customise the config
 
 Edit `src/config` to change:
-- `BASE_HOSTNAME` — default `klipperpi`
+- `BASE_HOSTNAME` — default `r3dtospi5`
 - `BASE_TIMEZONE` — default `Australia/Sydney`
 - `BASE_LOCALE` — default `en_AU.UTF-8`
 
 ### 5. Build
 
 ```bash
-cd ~/KlipperPi
+cd ~/R3DTOS-PI5
 make build
 ```
 
@@ -109,7 +112,7 @@ The build downloads packages inside the chroot.
 
 The finished image will be at:
 ```
-src/workspace/KlipperPi.img
+src/workspace/R3DTOS-PI5.img
 ```
 
 ---
@@ -118,13 +121,13 @@ src/workspace/KlipperPi.img
 
 ### Raspberry Pi Imager (Recommended)
 1. Open Raspberry Pi Imager
-2. Choose OS → Use Custom → select `KlipperPi.img`
+2. Choose OS → Use Custom → select `R3DTOS-PI5.img` (or whatever `.img` name matches your clone folder)
 3. Choose your SD card or NVMe
 4. Write
 
 ### dd (Linux)
 ```bash
-sudo dd if=src/workspace/KlipperPi.img of=/dev/sdX bs=4M status=progress
+sudo dd if=src/workspace/R3DTOS-PI5.img of=/dev/sdX bs=4M status=progress
 sync
 ```
 
@@ -137,33 +140,33 @@ Replace `/dev/sdX` with your actual device (check with `lsblk`).
 1. Insert the media into your Pi 5
 2. Connect to your network via **Ethernet** (WiFi can be set up afterward)
 3. Wait ~2 minutes for first-boot setup to complete
-4. Browse to `http://klipperpi.local` — Mainsail loads
-5. Click **KlipperPi Configurator** in the left sidebar
+4. Browse to `http://r3dtospi5.local` — Mainsail loads
+5. Click **Configurator** in the left sidebar (RatOS Configurator)
 6. Follow the wizard to detect and flash your 3D printer board
 
-> **Tip:** If `klipperpi.local` doesn't resolve, try the IP address shown
+> **Tip:** If `r3dtospi5.local` doesn't resolve, try the IP address shown
 > in your router's DHCP table, or connect a monitor to the Pi.
 
 ---
 
-## RatOS-configuration on KlipperPi
+## RatOS-configuration on R3DTOS PI5
 
 The image includes [RatOS-configuration](https://github.com/Rat-OS/RatOS-configuration) (`v2.1.x`) under `~/printer_data/config/RatOS` so the RatOS Configurator and board templates match upstream. Note the following **compatibility** points versus a stock RatOS image:
 
-| Topic | KlipperPi behaviour |
+| Topic | R3DTOS PI5 behaviour |
 |--------|---------------------|
 | **OS** | Raspberry Pi OS Lite **Bookworm arm64** — same Debian family RatOS targets; no Armbian/CB1-specific paths. |
-| **User / paths** | RatOS scripts often assume `/home/pi`; KlipperPi uses `BASE_USER=pi`, so paths align. |
-| **Moonraker ↔ Klipper socket** | KlipperPi keeps `klippy_uds_address: /tmp/klippy_uds` in the **live** `moonraker.conf`. The `moonraker.conf` file **inside** the RatOS-configuration repo is a RatOS reference layout (e.g. `~/printer_data/comms/klippy.sock`); it is **not** copied over the system config, so Moonraker and `klipper.service` stay in sync. |
+| **User / paths** | RatOS scripts often assume `/home/pi`; R3DTOS PI5 uses `BASE_USER=pi`, so paths align. |
+| **Moonraker ↔ Klipper socket** | R3DTOS PI5 keeps `klippy_uds_address: /tmp/klippy_uds` in the **live** `moonraker.conf`. The `moonraker.conf` file **inside** the RatOS-configuration repo is a RatOS reference layout (e.g. `~/printer_data/comms/klippy.sock`); it is **not** copied over the system config, so Moonraker and `klipper.service` stay in sync. |
 | **`scripts/ratos-install.sh`** | Upstream expects to be run as **`pi` (not root)**, replaces `printer.cfg` from RatOS templates, installs many udev symlinks, and calls the **`ratos` CLI** (Configurator API) to register Klipper extensions. The image build **only clones** the repo and installs `python3-matplotlib` / `curl`; run `ratos-install.sh` manually after first boot if you want the full RatOS wiring. |
-| **Moonraker Update Manager** | `[update_manager ratos_configuration]` tracks the Git repo **without** `install_script`, so updates do not automatically run `ratos-install.sh` (avoids overwriting the KlipperPi placeholder `printer.cfg` on every update). |
+| **Moonraker Update Manager** | `[update_manager ratos_configuration]` tracks the Git repo **without** `install_script`, so updates do not automatically run `ratos-install.sh` (avoids overwriting the R3DTOS PI5 placeholder `printer.cfg` on every update). |
 | **Upstream notice** | RatOS documents that development is moving toward [RatOS-configurator](https://github.com/Rat-OS/RatOS-configurator); the configuration tree remains the modular Klipper config source. |
 | **Raspberry Pi 5** | [RatOS-configuration](https://github.com/Rat-OS/RatOS-configuration) does **not** gate on a specific Pi model. Boards, macros, and `boards/rpi/firmware.config` are plain Klipper Kconfig snippets; the RPi “MCU” preset is the **Linux process** build, which is valid on **Pi 4 and Pi 5** under **64-bit** Pi OS. |
-| **`ratos-update.sh` (if you run it)** | The image build **patches** `~/printer_data/config/RatOS/scripts/ratos-update.sh` after clone: `python3.9` in the matplotlib path is replaced with the **actual** `python3.*` folder under `~/klippy-env/lib/` (Bookworm is usually 3.11), and the **`ensure_node_18` line is commented out** so Node **20** from KlipperPi is not downgraded to Node 18. If Moonraker updates RatOS-configuration and resets that file, re-apply or re-flash from a refreshed image build. |
+| **`ratos-update.sh` (if you run it)** | The image build **patches** `~/printer_data/config/RatOS/scripts/ratos-update.sh` after clone: `python3.9` in the matplotlib path is replaced with the **actual** `python3.*` folder under `~/klippy-env/lib/` (Bookworm is usually 3.11), and the **`ensure_node_18` line is commented out** so Node **20** from R3DTOS PI5 is not downgraded to Node 18. If Moonraker updates RatOS-configuration and resets that file, re-apply or re-flash from a refreshed image build. |
 
 ### Raspberry Pi 5 — “full compatibility” checklist
 
-What “Pi 5 ready” means in practice is **hardware + OS + stack + validation**. KlipperPi already targets 64-bit Pi OS Lite Bookworm (the family Raspberry Pi tests on Pi 5). To tighten further:
+What “Pi 5 ready” means in practice is **hardware + OS + stack + validation**. R3DTOS PI5 already targets 64-bit Pi OS Lite Bookworm (the family Raspberry Pi tests on Pi 5). To tighten further:
 
 1. **Power / thermals** — Use a **5 V** supply appropriate for load (official **5 A** unit if you use many USB devices or NVMe). Adequate cooling avoids throttling during long builds or camera encode.
 2. **Bootloader / firmware** — Keep **EEPROM / bootloader** current (Raspberry Pi Imager advanced menu, or `raspi-eeprom-update` on the Pi). Pi 5 gains fixes for USB, PCIe, and power sequencing over time.
@@ -180,7 +183,7 @@ What “Pi 5 ready” means in practice is **hardware + OS + stack + validation*
 WiFi can be configured after first boot via SSH:
 
 ```bash
-ssh pi@klipperpi.local
+ssh pi@r3dtospi5.local
 # password: raspberry
 
 sudo nmtui
@@ -208,8 +211,19 @@ ip -br link
 
 1. **RJ45 LEDs off** — If the **board’s green activity LED** is also not blinking, the OS may not be booting (bad flash, wrong image, power, or storage). HDMI + keyboard helps confirm boot. Link LEDs can stay dark if **no cable** is plugged in.
 2. **Cable / switch / router** — Try another cable, another switch port, and confirm DHCP is offered on the LAN.
-3. **First boot** — Inspect `cat /var/log/klipperpi-firstboot.log` and `journalctl -u NetworkManager -b --no-pager` once you have local console or serial.
+3. **First boot** — Inspect `cat /var/log/r3dtospi5-firstboot.log` and `journalctl -u NetworkManager -b --no-pager` once you have local console or serial.
 4. **WiFi** — Not preconfigured: use **Raspberry Pi Imager** “Wireless LAN” options when writing the image, or run `sudo nmtui` from a console after Ethernet works once.
+
+### SD / USB image will not boot at all (no activity LED, no HDMI)
+
+Use this when the Pi **never reaches a login prompt** or **shows no boot progress** (not the same as “no Ethernet” once the OS is running).
+
+1. **Hardware** — Official **5 V** supply with enough **current** for Pi 5; quality **SD** or **USB SSD**; try another card / reader / cable.
+2. **Flash** — [Raspberry Pi Imager](https://www.raspberrypi.com/software/); correct model (**Pi 5**); **64-bit** image if you built **arm64**; verify the write (Imager can do it); re-download the `.img.xz` in case of corruption.
+3. **EEPROM / boot** — If other known-good images boot, compare [Pi 5 boot troubleshooting](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html) (recovery / bootloader updates).
+4. **Shrink vs raw image** — Rarely, a **PiShrink**-processed image can disagree with a specific card or bootloader. In GitHub Actions, run **Build R3DTOS PI5 Image** via **workflow_dispatch** and set **`skip_pishrink`** to **true** (artifact will be **much larger**). If that image boots, focus on PiShrink / partition geometry.
+5. **Hotspot module** — If you still suspect the hotspot stack, temporarily **remove `hotspot`** from `MODULES` in `src/config`, rebuild, and retest.
+6. **Logs** — If anything appears on HDMI, note the last line. With a **USB-serial** adapter on the UART pins, capture early boot messages.
 
 ---
 
@@ -217,9 +231,9 @@ ip -br link
 
 | Service | URL | User | Password |
 |---|---|---|---|
-| SSH | `ssh pi@klipperpi.local` | `pi` | `raspberry` |
-| Mainsail | `http://klipperpi.local` | — | — |
-| Configurator | `http://klipperpi.local:3000` | — | — |
+| SSH | `ssh pi@r3dtospi5.local` | `pi` | `raspberry` |
+| Mainsail | `http://r3dtospi5.local` | — | — |
+| Configurator | `http://r3dtospi5.local:3000` | — | — |
 
 > **Security:** Change the default SSH password immediately:
 > ```bash
@@ -231,7 +245,7 @@ ip -br link
 ## Service Management
 
 ```bash
-# Check status of all KlipperPi services
+# Check status of all R3DTOS PI5 services
 systemctl status klipper moonraker ratos-configurator nginx
 
 # Restart a service
@@ -245,7 +259,7 @@ journalctl -fu moonraker
 journalctl -fu ratos-configurator
 
 # First boot log
-cat /var/log/klipperpi-firstboot.log
+cat /var/log/r3dtospi5-firstboot.log
 ```
 
 ---
@@ -254,7 +268,7 @@ cat /var/log/klipperpi-firstboot.log
 
 All components update through Mainsail's built-in Update Manager:
 
-1. Open Mainsail → `http://klipperpi.local`
+1. Open Mainsail → `http://r3dtospi5.local`
 2. Go to **Settings → Update Manager**
 3. Click **Check for updates**
 4. Update each component individually
@@ -273,7 +287,7 @@ The workflow runs **PiShrink** on the raw `.img` after CustomPiOS finishes. PiSh
 
 ### Image build: `next/font` / `Failed to fetch Inter from Google Fonts` / `ETIMEDOUT`
 
-The RatOS Configurator build uses Next.js; **`next/font/google`** downloads fonts at **build** time. Inside the CustomPiOS chroot (especially on GitHub Actions), HTTPS to **fonts.gstatic.com** can time out. The KlipperPi module replaces that with **`next/font/local`** and a system **Inter** (or DejaVu) TTF so the image build stays offline-safe.
+The RatOS Configurator build uses Next.js; **`next/font/google`** downloads fonts at **build** time. Inside the CustomPiOS chroot (especially on GitHub Actions), HTTPS to **fonts.gstatic.com** can time out. The R3DTOS PI5 `ratos-configurator` module replaces that with **`next/font/local`** and a system **Inter** (or DejaVu) TTF so the image build stays offline-safe.
 
 ### Image build: `ERR_PNPM_ENOSPC` / `no space left on device` during RatOS Configurator
 
@@ -285,7 +299,7 @@ Something still has the chroot open (file descriptor, shell cwd, `apt`, `qemu`).
 
 ```bash
 sync
-M=/path/to/KlipperPi/src/workspace/mount   # adjust to your clone
+M=/path/to/R3DTOS-PI5/src/workspace/mount   # adjust to your clone
 sudo lsof +D "$M" 2>/dev/null | head
 sudo umount -R -l "$M"   # lazy recursive unmount; safe if paths match CustomPiOS
 sudo losetup -D
@@ -368,8 +382,8 @@ Pi 5 (Bookworm 64-bit arm64)
 │   ├── sonar.service             :  WiFi keepalive (optional)
 │   ├── KlipperScreen.service     :  touchscreen UI (if installed)
 │   ├── klipper-mcu.service       :  Pi as secondary MCU (Linux process build)
-│   ├── avahi-daemon.service     :  mDNS → klipperpi.local
-│   └── klipperpi-firstboot.service (runs once, then disables itself)
+│   ├── avahi-daemon.service     :  mDNS → r3dtospi5.local
+│   └── r3dtospi5-firstboot.service (runs once, then disables itself)
 │
 ├── /home/pi/
 │   ├── klipper/                 Klipper source + klippy-env/
@@ -390,6 +404,6 @@ Pi 5 (Bookworm 64-bit arm64)
 └── /etc/
     ├── nginx/sites-enabled/mainsail
     ├── systemd/system/*.service
-    ├── sudoers.d/klipperpi-flash
-    └── udev/rules.d/49-klipperpi.rules
+    ├── sudoers.d/r3dtospi5-flash
+    └── udev/rules.d/49-r3dtospi5.rules
 ```

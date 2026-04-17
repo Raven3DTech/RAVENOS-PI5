@@ -26,7 +26,7 @@ fi
 chown -R "${BASE_USER}:${BASE_USER}" "${RATOS_CONFIGURATION_PATH}"
 popd &>/dev/null
 
-# Align upstream ratos-update.sh with Bookworm + KlipperPi (Pi 5 image stack)
+# Align upstream ratos-update.sh with Bookworm + R3DTOS PI5 (Pi 5 image stack)
 RU="${RATOS_CONFIGURATION_PATH}/scripts/ratos-update.sh"
 if [[ -f "${RU}" ]]; then
     KLIB="/home/${BASE_USER}/klippy-env/lib"
@@ -37,8 +37,8 @@ if [[ -f "${RU}" ]]; then
             sed -i "s/python3\\.9/${PYDIR}/g" "${RU}" || true
         fi
     fi
-    # KlipperPi ships Node 20 for RatOS Configurator; do not downgrade to Node 18.
-    sed -i 's/^ensure_node_18$/# &  # KlipperPi: Node 20 image/' "${RU}" || true
+    # R3DTOS PI5 ships Node 20 for RatOS Configurator; do not downgrade to Node 18.
+    sed -i 's/^ensure_node_18$/# &  # R3DTOS PI5: Node 20 image/' "${RU}" || true
 fi
 
 echo_green "RatOS-configuration installed at ${RATOS_CONFIGURATION_PATH}"

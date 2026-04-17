@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# KlipperPi — Mainsail Module Install Script
+# R3DTOS PI5 — Mainsail Module Install Script
 # ============================================================
 set -ex
 
@@ -50,7 +50,7 @@ cat > ${MAINSAIL_DIR}/config.json << 'EOF'
     "instancesDB": "moonraker",
     "instances": [
         {
-            "hostname": "klipperpi.local",
+            "hostname": "r3dtospi5.local",
             "port": 7125,
             "path": "/"
         }

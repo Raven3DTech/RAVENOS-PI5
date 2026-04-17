@@ -26,4 +26,4 @@ fi
 echo "Starting image build (30–90+ minutes, needs sudo)..."
 make build
 
-echo "Done. Output: ${ROOT}/src/workspace/KlipperPi.img"
+echo "Done. Output: ${ROOT}/src/workspace/<clone-folder-name>.img (CustomPiOS names it after the parent of src/, e.g. R3DTOS-PI5.img)"

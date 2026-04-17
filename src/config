@@ -1,4 +1,4 @@
-# KlipperPi - CustomPiOS Master Config
+# R3DTOS PI5 — CustomPiOS master config (RatOS v2.1.x stack port for Raspberry Pi OS / Pi 5)
 # ------------------------------------
 # Module order matters; each module can depend on the previous.
 # klipper must come before moonraker, moonraker before mainsail,
@@ -27,7 +27,7 @@ export BASE_IMAGE_ENLARGEROOT="14000"
 # Base system settings
 export BASE_USER=pi
 export BASE_USER_PASSWORD=raspberry
-export BASE_HOSTNAME=klipperpi
+export BASE_HOSTNAME=r3dtospi5
 
 # Timezone
 export BASE_TIMEZONE="Australia/Sydney"

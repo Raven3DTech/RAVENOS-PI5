@@ -1,5 +1,5 @@
 # ============================================================
-# KlipperPi — sudoers rules for board flashing
+# R3DTOS PI5 — sudoers rules for board flashing
 # Allows the 'pi' user to run flash-related commands
 # without a password, required by the Configurator.
 # ============================================================

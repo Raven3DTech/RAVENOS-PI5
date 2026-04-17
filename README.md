@@ -1,12 +1,14 @@
-# KlipperPi
+# R3DTOS PI5
 
-A custom Raspberry Pi OS image for 3D printers, built with CustomPiOS.
+**R3DTOS PI5** is a **port of the RatOS v2.1.x** printer software stack to **Raspberry Pi OS Lite arm64** for **Raspberry Pi 5** (Pi 4 is supported too). It is **not** the upstream RatOS CB1 image: it reuses **RatOS-configuration**, **RatOS Configurator**, and RatOS-derived modules (hotspot, tooling) where they work on Pi OS, with Pi‑5 / Bookworm adjustments documented in **BUILD.md**. **RatOS** and **RatRig** remain the upstream source of truth for configuration patterns; this image exists to run that ecosystem on official Raspberry Pi hardware.
+
+Built with **CustomPiOS**.
 
 Includes:
 - **Klipper** — 3D printer firmware
 - **Moonraker** — Klipper API server
 - **Mainsail** — Web UI for Klipper
-- **Configurator** — Board configuration, flashing and provisioning wizard
+- **Configurator** — RatOS Configurator: board configuration, flashing and provisioning wizard
 
 Targets **Raspberry Pi 5** running **Bookworm 64-bit**, but is compatible with Pi 4 as well.
 
@@ -33,15 +35,17 @@ sudo apt-get install -y \
 
 ### 1. Clone this repo and CustomPiOS
 
+Use the folder name **`R3DTOS-PI5`** so the CustomPiOS output image is named **`R3DTOS-PI5.img`** (the name matches the parent directory of `src/`).
+
 ```bash
-git clone https://github.com/YOUR_USERNAME/KlipperPi.git
+git clone https://github.com/YOUR_USERNAME/R3DTOS-PI5.git
 git clone https://github.com/guysoft/CustomPiOS.git
 ```
 
 ### 2. Download the base Raspberry Pi OS image
 
 ```bash
-cd KlipperPi/src/image
+cd R3DTOS-PI5/src/image
 wget -c https://downloads.raspberrypi.org/raspios_lite_arm64_latest -O raspios_lite_arm64_latest.img.xz
 ```
 
@@ -50,29 +54,31 @@ wget -c https://downloads.raspberrypi.org/raspios_lite_arm64_latest -O raspios_l
 ### 3. Update CustomPiOS paths
 
 ```bash
-cd KlipperPi/src
+cd R3DTOS-PI5/src
 ../../CustomPiOS/src/update-custompios-paths
 ```
 
 ### 4. Build the image
 
 ```bash
-cd KlipperPi/src
+cd R3DTOS-PI5/src
 sudo modprobe loop
 sudo bash -x ./build_dist
 ```
 
 The finished image will be at:
 ```
-KlipperPi/src/workspace/KlipperPi.img
+R3DTOS-PI5/src/workspace/R3DTOS-PI5.img
 ```
+
+*(If your clone folder has a different name, the `.img` filename matches that folder.)*
 
 ### 5. Flash the image
 
 Use **Raspberry Pi Imager** (recommended) and select the `.img` file, or:
 
 ```bash
-sudo dd if=KlipperPi.img of=/dev/sdX bs=4M status=progress
+sudo dd if=R3DTOS-PI5.img of=/dev/sdX bs=4M status=progress
 sync
 ```
 
@@ -82,9 +88,11 @@ sync
 
 1. Insert the SD card / NVMe into your Pi 5
 2. Connect to your network via Ethernet (recommended for first boot)
-3. Browse to `http://klipperpi.local`  — Mainsail loads
+3. Browse to `http://r3dtospi5.local` — Mainsail loads (after first boot, hostname may be `r3dtospi5-XXXX` — check the Pi’s console or router)
 4. Click **Configurator** in the left sidebar
 5. Follow the wizard to detect your board, generate config, and flash firmware
+
+**Fallback hotspot:** SSID **`r3dtospi5`** (default passphrase **`raspberry`**). On that network, open **`http://192.168.50.1`** for Mainsail and **`http://192.168.50.1:3000`** for the Configurator.
 
 ---
 
@@ -92,11 +100,11 @@ sync
 
 | Item | Value |
 |---|---|
-| Hostname | `klipperpi.local` |
+| Hostname | `r3dtospi5.local` (may become `r3dtospi5-XXXX.local` after first boot) |
 | SSH user | `pi` |
 | SSH password | `raspberry` *(change on first login)* |
-| Mainsail URL | `http://klipperpi.local` |
-| Configurator URL | `http://klipperpi.local:3000` |
+| Mainsail URL | `http://r3dtospi5.local` |
+| Configurator URL | `http://r3dtospi5.local:3000` |
 
 ---
 
@@ -104,8 +112,8 @@ sync
 
 ```
 Browser
-  └── http://klipperpi.local          → Mainsail (nginx → /var/www/mainsail)
-  └── http://klipperpi.local:3000     → Configurator (Next.js / port 3000)
+  └── http://r3dtospi5.local          → Mainsail (nginx → /var/www/mainsail)
+  └── http://r3dtospi5.local:3000     → Configurator (Next.js / port 3000)
 
 Mainsail  ──────────────────────────► Moonraker API (:7125)
 Configurator ───────────────────────► Moonraker API (:7125)
@@ -144,4 +152,4 @@ Each component can be updated independently via Moonraker's update manager
 ## License
 
 MIT — This build system is open source. Klipper, Moonraker, Mainsail and the RatOS
-Configurator each carry their own respective licenses.
+projects retain their respective licenses.

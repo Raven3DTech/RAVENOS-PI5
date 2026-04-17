@@ -1,5 +1,5 @@
 # ============================================================
-# KlipperPi — nginx site config for Mainsail
+# R3DTOS PI5 — nginx site config for Mainsail
 # Serves Mainsail on port 80.
 # Proxies /websocket, /api, /access, /machine to Moonraker.
 # ============================================================
@@ -17,10 +17,20 @@ server {
     listen 80 default_server;
     listen [::]:80 default_server;
 
-    server_name klipperpi.local _;
+    server_name r3dtospi5.local _;
 
     access_log /var/log/nginx/mainsail-access.log;
     error_log  /var/log/nginx/mainsail-error.log;
+
+    # ── Captive portal / OS connectivity probes ───────────────
+    # Phones open these when the AP has “no internet”; without a clean answer
+    # they may show a generic sign-in page or the wrong app instead of Mainsail.
+    location = /generate_204 { return 302 /; }
+    location = /gen_204 { return 302 /; }
+    location = /hotspot-detect.html { return 302 /; }
+    location = /canonical.html { return 302 /; }
+    location = /connecttest.txt { return 302 /; }
+    location = /ncsi.txt { return 302 /; }
 
     # ── Mainsail web app ──────────────────────────────────────
     root /var/www/mainsail;

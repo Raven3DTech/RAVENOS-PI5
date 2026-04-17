@@ -1,4 +1,4 @@
-name: Build KlipperPi Image
+name: Build R3DTOS PI5 Image
 
 on:
   push:
@@ -7,6 +7,11 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      skip_pishrink:
+        description: "Skip PiShrink (much larger .img.xz; debug if Pi will not boot after shrink)"
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -14,10 +19,10 @@ jobs:
     timeout-minutes: 360
 
     steps:
-      - name: Checkout KlipperPi
+      - name: Checkout R3DTOS PI5
         uses: actions/checkout@v4
         with:
-          path: KlipperPi
+          path: R3DTOS-PI5
 
       - name: Checkout CustomPiOS
         uses: actions/checkout@v4
@@ -70,7 +75,7 @@ jobs:
         run: |
           sudo modprobe loop
           sudo \
-            DIST_PATH=$GITHUB_WORKSPACE/KlipperPi/src \
+            DIST_PATH=$GITHUB_WORKSPACE/R3DTOS-PI5/src \
             CUSTOM_PI_OS_PATH=$GITHUB_WORKSPACE/CustomPiOS/src \
             BASE_ZIP_IMG=$GITHUB_WORKSPACE/base-image-cache/raspios_lite_arm64_latest.img.xz \
             bash $GITHUB_WORKSPACE/CustomPiOS/src/build
@@ -81,7 +86,7 @@ jobs:
       - name: Release image mounts and loop devices
         if: always()
         run: |
-          M="${GITHUB_WORKSPACE}/KlipperPi/src/workspace/mount"
+          M="${GITHUB_WORKSPACE}/R3DTOS-PI5/src/workspace/mount"
           sync
           if sudo mount 2>/dev/null | grep -qF "${M}"; then
             echo "Lazy-unmounting ${M} ..."
@@ -101,8 +106,10 @@ jobs:
 
       - name: Find, shrink, and rename output image
         id: rename
+        env:
+          SKIP_PISHRINK: ${{ inputs.skip_pishrink }}
         run: |
-          WORKSPACE=KlipperPi/src/workspace
+          WORKSPACE=R3DTOS-PI5/src/workspace
           VERSION="${{ github.ref_name }}"
           if [ -z "${VERSION}" ] || [ "${VERSION}" = "main" ]; then
             VERSION=$(date +'%Y%m%d')
@@ -113,25 +120,29 @@ jobs:
             echo "No image found in ${WORKSPACE}" && ls -la "${WORKSPACE}" && exit 1
           fi
           EXT="${IMG##*.img}"
-          DEST="${WORKSPACE}/KlipperPi-${VERSION}-arm64.img${EXT}"
+          DEST="${WORKSPACE}/R3DTOS-PI5-${VERSION}-arm64.img${EXT}"
           sudo mv "${IMG}" "${DEST}"
           sudo chown $USER:$USER "${DEST}" || true
           
           # If the resulting file is a raw .img, strip empty blocks and compress it!
           if [[ "${DEST}" == *.img ]]; then
-            echo "Disk before PiShrink:"
+            echo "Disk before PiShrink / xz:"
             df -h
-            echo "Downloading PiShrink..."
-            sudo wget -q https://raw.githubusercontent.com/Drewsif/PiShrink/master/pishrink.sh -O /usr/local/bin/pishrink.sh
-            sudo chmod +x /usr/local/bin/pishrink.sh
-            # -s skip first-boot auto-expand hook; -n skip GitHub version check (curl in CI)
-            echo "Shrinking filesystem (PiShrink)..."
-            if ! sudo pishrink.sh -s -n "${DEST}"; then
-              echo "PiShrink failed; retrying with filesystem repair (-r)..."
-              sudo pishrink.sh -s -n -r "${DEST}"
+            if [ "${SKIP_PISHRINK:-false}" = "true" ]; then
+              echo "SKIP_PISHRINK=true — skipping PiShrink (workflow_dispatch). Artifact will be much larger."
+            else
+              echo "Downloading PiShrink..."
+              sudo wget -q https://raw.githubusercontent.com/Drewsif/PiShrink/master/pishrink.sh -O /usr/local/bin/pishrink.sh
+              sudo chmod +x /usr/local/bin/pishrink.sh
+              # -s skip first-boot auto-expand hook; -n skip GitHub version check (curl in CI)
+              echo "Shrinking filesystem (PiShrink)..."
+              if ! sudo pishrink.sh -s -n "${DEST}"; then
+                echo "PiShrink failed; retrying with filesystem repair (-r)..."
+                sudo pishrink.sh -s -n -r "${DEST}"
+              fi
+              echo "Disk after PiShrink:"
+              df -h
             fi
-            echo "Disk after PiShrink:"
-            df -h
             # PiShrink runs as root; workspace dir often stays root-owned — runner cannot create *.xz here.
             sudo chown "$USER:$USER" "${DEST}" "${WORKSPACE}" 2>/dev/null || true
             echo "Compressing heavily with xz..."
@@ -148,7 +159,7 @@ jobs:
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         with:
-          name: KlipperPi-${{ steps.rename.outputs.VERSION }}-arm64
+          name: R3DTOS-PI5-${{ steps.rename.outputs.VERSION }}-arm64
           path: ${{ steps.rename.outputs.IMAGE_PATH }}
           retention-days: 30
 
@@ -157,7 +168,7 @@ jobs:
         id: changelog
         run: |
           TAG="${{ github.ref_name }}"
-          NOTES=$(awk "/^## ${TAG}/,/^## /" KlipperPi/CHANGELOG.md \
+          NOTES=$(awk "/^## ${TAG}/,/^## /" R3DTOS-PI5/CHANGELOG.md \
                   | grep -v "^## ${TAG}" | grep -v "^## " | sed '/^$/d')
           if [ -z "${NOTES}" ]; then
             NOTES="See CHANGELOG.md for full details."
@@ -171,9 +182,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ steps.rename.outputs.IMAGE_PATH }}
-          name: "KlipperPi ${{ github.ref_name }}"
+          name: "R3DTOS PI5 ${{ github.ref_name }}"
           body: |
-            ## KlipperPi ${{ github.ref_name }}
+            ## R3DTOS PI5 ${{ github.ref_name }}
+
+            Port of **RatOS v2.1.x** stack to Raspberry Pi OS / Pi 5 — not the upstream RatOS CB1 image. See README.
 
             ${{ steps.changelog.outputs.NOTES }}
 
@@ -185,14 +198,14 @@ jobs:
             1. Download the `.img.xz` file
             2. Open **Raspberry Pi Imager** → Choose OS → Use Custom
             3. Select the file, choose your SD card / NVMe, and write
-            4. Boot your Pi, then browse to `http://klipperpi.local`
+            4. Boot your Pi, then browse to `http://r3dtospi5.local` (hostname may include a serial suffix after first boot)
 
             ### Default Credentials
             | Service | URL | User | Password |
             |---|---|---|---|
-            | SSH | `ssh pi@klipperpi.local` | `pi` | `raspberry` |
-            | Mainsail | `http://klipperpi.local` | — | — |
-            | Configurator | `http://klipperpi.local:3000` | — | — |
+            | SSH | `ssh pi@r3dtospi5.local` | `pi` | `raspberry` |
+            | Mainsail | `http://r3dtospi5.local` | — | — |
+            | Configurator | `http://r3dtospi5.local:3000` | — | — |
 
             > ⚠️ Change the default password after first login: `passwd pi`
           draft: false
