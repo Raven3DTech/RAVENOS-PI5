@@ -1,0 +1,2 @@
+#!/bin/bash
+# Ensures BASE_USER has an interactive shell (see start_chroot_script).

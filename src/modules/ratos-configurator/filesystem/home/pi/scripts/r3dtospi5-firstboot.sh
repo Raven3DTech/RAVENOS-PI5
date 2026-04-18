@@ -22,6 +22,21 @@ echo "R3DTOS PI5 First Boot Setup"
 echo "Started: $(date)"
 echo "============================================"
 
+# ── SSH: Pi OS may leave `pi` on nologin (password OK but "account not available") ─
+echo "[0/7] Ensuring user pi has an interactive login shell..."
+if id -u pi >/dev/null 2>&1; then
+    _pishell=$(getent passwd pi | cut -d: -f7)
+    case "${_pishell}" in
+        /usr/sbin/nologin|/sbin/nologin|/bin/false|"")
+            echo "  Adjusting pi shell from '${_pishell:-empty}' → /bin/bash"
+            usermod -s /bin/bash pi
+            ;;
+        *)
+            echo "  pi shell already: ${_pishell}"
+            ;;
+    esac
+fi
+
 # ── Wireless: ensure not soft-blocked (common on fresh images / some boards) ─
 echo "[1/7] Unblocking rfkill (WiFi)..."
 rfkill unblock all 2>/dev/null || true
