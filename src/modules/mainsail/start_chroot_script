@@ -66,6 +66,9 @@ cp /filesystem/etc/nginx/sites-available/mainsail \
 rm -f /etc/nginx/sites-enabled/default
 ln -sf /etc/nginx/sites-available/mainsail /etc/nginx/sites-enabled/mainsail
 
+# Lay down filesystem/root (helper script, NM dispatcher, nginx drop-in) — same pattern as hotspot.
+unpack /filesystem/root /
+
 # ── Root URL: Ethernet → Mainsail, no cable → Configurator ───
 mkdir -p /var/lib/ravenos
 chmod +x /usr/local/bin/ravenos-update-nginx-root.sh
