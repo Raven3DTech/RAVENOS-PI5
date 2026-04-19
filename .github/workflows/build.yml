@@ -30,6 +30,18 @@ jobs:
           repository: guysoft/CustomPiOS
           path: CustomPiOS
 
+      - name: Fail fast on CRLF in RavenOS tree
+        run: |
+          set -euo pipefail
+          cd "${GITHUB_WORKSPACE}/R3DTOS-PI5"
+          # -I skips binary blobs; CRLF breaks bash source, shebangs, visudo, systemd in chroot.
+          bad=$(git grep -l -I $'\r' -- . || true)
+          if [ -n "${bad}" ]; then
+            echo "::error::CRLF in tracked text — normalize to LF (see .gitattributes). Files:" >&2
+            echo "${bad}" >&2
+            exit 1
+          fi
+
       # GitHub-hosted runners often have a hostname not listed in /etc/hosts; sudo then prints
       # "unable to resolve host …" on every invocation (harmless but noisy in build logs).
       - name: Map VM hostname in /etc/hosts (quiet sudo warnings)

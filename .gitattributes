@@ -1,14 +1,19 @@
-# Sourced by bash on Linux (CustomPiOS build / CI); CRLF breaks `source` with $'\r' errors
+# Line endings: CustomPiOS runs bash/chroot on Linux. CRLF breaks `source`, shebangs,
+# sudoers (visudo), systemd units, and nginx helpers — long CI rebuilds for a tiny fix.
+# Keep these paths LF on checkout (especially on Windows).
+
 src/config text eol=lf
 Makefile text eol=lf
-scripts/*.sh text eol=lf
+scripts/** text eol=lf
 
-# CustomPiOS module scripts must use LF inside the Linux chroot
+# Every module: chroot scripts, configs, and unpacked filesystem trees
 src/modules/**/start_chroot_script text eol=lf
+src/modules/**/end_chroot_script text eol=lf
 src/modules/**/config text eol=lf
-# RatOS hotspot payload (bash scripts + configs) must stay LF for the image chroot
-src/modules/hotspot/filesystem/** text eol=lf
-# Mainsail module payloads (shell shebangs break in chroot if CRLF → "required file not found")
-src/modules/mainsail/filesystem/** text eol=lf
-# Configurator overlay (sudoers/visudo rejects CRLF; shell hooks need LF)
-src/modules/ratos-configurator/filesystem/** text eol=lf
+src/modules/**/filesystem/** text eol=lf
+
+# CI + docs
+.github/** text eol=lf
+*.md text eol=lf
+.gitattributes text eol=lf
+.gitignore text eol=lf
