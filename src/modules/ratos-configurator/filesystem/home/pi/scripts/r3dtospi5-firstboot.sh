@@ -70,6 +70,10 @@ fi
 
 echo "${NEW_HOSTNAME}" > /etc/hostname
 sed -i "s/${DEFAULT_HOST}/${NEW_HOSTNAME}/g" /etc/hosts
+# Must match running kernel hostname: sudo resolves `gethostname()` via NSS. If we only
+# rewrite /etc/hosts and not the live name, `r3dtospi5` disappears from hosts while the
+# kernel still reports it → "unable to resolve host" and NOPASSWD sudo (iw, scripts) fails.
+hostnamectl set-hostname "${NEW_HOSTNAME}" 2>/dev/null || hostname "${NEW_HOSTNAME}"
 
 # Update moonraker.conf with new hostname
 sed -i "s/${DEFAULT_HOST}.local/${NEW_HOSTNAME}.local/g" \
