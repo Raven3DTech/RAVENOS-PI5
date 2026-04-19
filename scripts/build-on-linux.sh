@@ -8,7 +8,7 @@ cd "${ROOT}"
 
 CUSTOMPIOS="${CUSTOMPIOS:-${ROOT}/../CustomPiOS}"
 
-if [[ ! -f "${CUSTOMPIOS}/src/build_dist" ]]; then
+if [[ ! -f "${CUSTOMPIOS}/src/build" && ! -f "${CUSTOMPIOS}/src/build_dist" ]]; then
   echo "CustomPiOS not found at: ${CUSTOMPIOS}"
   echo "Clone it next to this repo:"
   echo "  git clone https://github.com/guysoft/CustomPiOS.git \"${CUSTOMPIOS}\""

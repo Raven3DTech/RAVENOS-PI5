@@ -27,10 +27,11 @@ check-deps:
 	@which gawk        || (echo "❌ gawk not found"        && exit 1)
 	@which make        || (echo "❌ make not found"        && exit 1)
 	@which git         || (echo "❌ git not found"         && exit 1)
-	@which qemu-arm-static || (echo "❌ qemu-user-static not found — run: sudo apt install qemu-user-static" && exit 1)
+	@(which qemu-aarch64-static >/dev/null 2>&1 || which qemu-arm-static >/dev/null 2>&1) || \
+		(echo "❌ qemu-user-static not found — run: sudo apt install qemu-user-static" && exit 1)
 	@which unzip       || (echo "❌ unzip not found"       && exit 1)
 	@which wget        || (echo "❌ wget not found"        && exit 1)
-	@ls $(CUSTOMPIOS_PATH)/src/build_dist > /dev/null 2>&1 || \
+	@(test -f "$(CUSTOMPIOS_PATH)/src/build" || test -f "$(CUSTOMPIOS_PATH)/src/build_dist") || \
 		(echo "❌ CustomPiOS not found at $(CUSTOMPIOS_PATH) — git clone https://github.com/guysoft/CustomPiOS.git" && exit 1)
 	@echo "✅ All dependencies satisfied"
 
@@ -43,8 +44,9 @@ download-image:
 	@echo "✅ Base image downloaded"
 
 update-paths:
-	cd $(SRC_DIR) && $(CUSTOMPIOS_PATH)/src/update-custompios-paths
-	@echo "✅ Paths updated"
+	cd $(SRC_DIR) && "$(abspath $(CUSTOMPIOS_PATH))/src/update-custompios-paths"
+	@ln -sf "$(abspath $(CUSTOMPIOS_PATH))/src/build" "$(SRC_DIR)/build_dist"
+	@echo "✅ Paths updated (src/build_dist → CustomPiOS src/build)"
 
 build: check-deps
 	@echo "Building RavenOS PI5 image..."
