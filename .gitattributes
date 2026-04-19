@@ -10,3 +10,5 @@ src/modules/**/config text eol=lf
 src/modules/hotspot/filesystem/** text eol=lf
 # Mainsail module payloads (shell shebangs break in chroot if CRLF → "required file not found")
 src/modules/mainsail/filesystem/** text eol=lf
+# Configurator overlay (sudoers/visudo rejects CRLF; shell hooks need LF)
+src/modules/ratos-configurator/filesystem/** text eol=lf
