@@ -66,6 +66,13 @@ cp /filesystem/etc/nginx/sites-available/mainsail \
 rm -f /etc/nginx/sites-enabled/default
 ln -sf /etc/nginx/sites-available/mainsail /etc/nginx/sites-enabled/mainsail
 
+# ── Root URL: Ethernet → Mainsail, no cable → Configurator ───
+mkdir -p /var/lib/r3dtospi5
+chmod +x /usr/local/bin/r3dtospi5-update-nginx-root.sh
+chmod +x /etc/NetworkManager/dispatcher.d/99-r3dtospi5-nginx-root
+/usr/local/bin/r3dtospi5-update-nginx-root.sh
+systemctl daemon-reload || true
+
 # ── Verify nginx config ───────────────────────────────────────
 nginx -t
 

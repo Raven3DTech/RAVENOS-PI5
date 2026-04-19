@@ -69,10 +69,9 @@ server {
     root /var/www/mainsail;
     index index.html;
 
-    # SPA fallback — any unknown path returns index.html
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
+    # "/" routing: Ethernet plugged (end0/eth0 carrier) → Mainsail; else → /configure/
+    # Fragment: /var/lib/r3dtospi5/nginx-mainsail-root.conf (updated at nginx start + NM events).
+    include /var/lib/r3dtospi5/nginx-mainsail-root.conf;
 
     # ── Moonraker WebSocket ───────────────────────────────────
     location /websocket {

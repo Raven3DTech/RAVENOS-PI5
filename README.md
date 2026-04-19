@@ -91,15 +91,15 @@ sync
 RatOS ships **Klipper, Moonraker, Mainsail, and the Configurator** enabled together on boot. Klipper may show errors until a board is configured; **Moonraker is still expected to be running** so Mainsail and most Configurator API calls work. The documented *user* order is network first, then updates in Mainsail, then the rest of the hardware wizard.
 
 1. Insert the SD card / NVMe into your Pi 5 and power on.
-2. **Wi‑Fi only (no Ethernet):** wait for the fallback hotspot **SSID `r3dtospi5`** (passphrase **`raspberry`**), join it, then open the Configurator setup at **`http://192.168.50.1/configure`** to set **Wi‑Fi and hostname** (same URL pattern as stock RatOS: `http://RatOS.local/configure` / `http://192.168.50.1/configure`).  
-   **Ethernet:** you can skip the hotspot and go straight to **`http://r3dtospi5.local/configure`** (hostname may become **`r3dtospi5-XXXX`** after first boot — check console or router).
+2. **Wi‑Fi only (no Ethernet cable on `end0`/`eth0`):** opening **`http://r3dtospi5.local/`** (or the hotspot **`http://192.168.50.1/`**) **redirects to the Configurator** at **`/configure/`** for Wi‑Fi and hostname setup. You can still open Mainsail assets directly (e.g. **`/index.html`**) if needed.  
+   **Ethernet plugged in:** **`http://r3dtospi5.local/`** goes **straight to Mainsail**; use **`http://r3dtospi5.local/configure`** when you want the Configurator (hostname may become **`r3dtospi5-XXXX`** after first boot — check console or router).
 3. Complete that first wizard step; upstream then has you **reboot** onto your LAN before continuing.
 4. Open **Mainsail** at **`http://<hostname>.local`** or **`http://<hostname>.local/config`** (port 80; `/config` redirects to `/`, matching RatOS install docs). Use **Update Manager** to refresh RatOS-related components before advancing the wizard (see upstream “Do NOT continue … before updating the software!”).
 5. Open **Configurator** again (sidebar link or **`http://<hostname>.local/configure`**) and continue through **board detection / flash** and the hardware wizard.
 
 **How it is served:** nginx on port **80** reverse-proxies **`/configure/*`** to Next.js on **127.0.0.1:3000** (RatOS-configurator **`basePath: '/configure'`**). You can still open **`http://<host>:3000/configure`** directly if nginx is down.
 
-**Fallback hotspot:** **`http://192.168.50.1`** — Mainsail; **`http://192.168.50.1/configure`** — Configurator (first‑run Wi‑Fi/hostname).
+**Fallback hotspot:** **`http://192.168.50.1/`** — redirects to Configurator when no Ethernet link; **`http://192.168.50.1/configure`** — Configurator directly.
 
 ---
 
@@ -110,7 +110,7 @@ RatOS ships **Klipper, Moonraker, Mainsail, and the Configurator** enabled toget
 | Hostname | `r3dtospi5.local` (may become `r3dtospi5-XXXX.local` after first boot) |
 | SSH user | `pi` |
 | SSH password | `raspberry` *(change on first login)* |
-| Mainsail URL | `http://r3dtospi5.local` |
+| Mainsail URL | `http://r3dtospi5.local` (only when a wired Ethernet link is up; otherwise `/` opens Configurator) |
 | Configurator URL | `http://r3dtospi5.local/configure` (direct Next: `:3000/configure`) |
 
 ---
@@ -119,7 +119,7 @@ RatOS ships **Klipper, Moonraker, Mainsail, and the Configurator** enabled toget
 
 ```
 Browser
-  └── http://r3dtospi5.local              → Mainsail (nginx → /var/www/mainsail)
+  └── http://r3dtospi5.local              → Mainsail when Ethernet (end0/eth0) has carrier; else 302 → /configure/
   └── http://r3dtospi5.local/configure    → RatOS Configurator (nginx → Next.js :3000, `basePath` /configure)
 
 Mainsail  ──────────────────────────► Moonraker API (:7125)
