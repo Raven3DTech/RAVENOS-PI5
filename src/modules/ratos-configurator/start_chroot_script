@@ -29,6 +29,12 @@ sudo -u pi git clone \
 cd ${RATOS_CONFIGURATOR_DIR}
 sudo -u pi git checkout ${RATOS_CONFIGURATOR_BRANCH}
 
+# Browser tab / metadata title (upstream says "RatOS Configurator")
+LAYOUT="${RATOS_CONFIGURATOR_DIR}/src/app/layout.tsx"
+if [[ -f "${LAYOUT}" ]]; then
+    sudo -u pi sed -i "s/RatOS Configurator/RavenOS Configurator/g" "${LAYOUT}"
+fi
+
 # ── Fix hardcoded paths that assume Raspberry Pi OS defaults ─
 # The configurator has bash scripts that hardcode /home/pi.
 # Since we use BASE_USER=pi this is fine, but we patch any

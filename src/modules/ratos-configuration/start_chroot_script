@@ -34,6 +34,15 @@ cp -a "${TMP_CLONE}/ratos-configurator/configuration/." "${RATOS_CONFIGURATION_P
 
 chown -R "${BASE_USER}:${BASE_USER}" "${RATOS_CONFIGURATION_PATH}"
 
+# RatOS-configurator tRPC `version` runs `git describe --tags --always` with cwd
+# RATOS_CONFIGURATION_PATH. A plain copy of configuration/ has no .git → exec throws → HTTP 500.
+sudo -u "${BASE_USER}" git -C "${RATOS_CONFIGURATION_PATH}" init
+sudo -u "${BASE_USER}" git -C "${RATOS_CONFIGURATION_PATH}" add -A
+sudo -u "${BASE_USER}" git -C "${RATOS_CONFIGURATION_PATH}" \
+    -c user.name="RavenOS" -c user.email="ravenos@local" \
+    commit -m "RavenOS PI5 configuration snapshot" \
+    || echo "warn: could not commit RatOS config tree (empty?)"
+
 # Align upstream ratos-update.sh with Bookworm + RavenOS PI5 (Pi 5 image stack)
 RU="${RATOS_CONFIGURATION_PATH}/scripts/ratos-update.sh"
 if [[ -f "${RU}" ]]; then
