@@ -51,10 +51,13 @@ update-paths:
 build: check-deps
 	@echo "Building RatOS PI5 image..."
 	sudo modprobe loop
-	cd $(SRC_DIR) && sudo bash -x ./build_dist
+	cd $(SRC_DIR) && sudo env \
+		DIST_PATH="$(abspath $(SRC_DIR))" \
+		CUSTOM_PI_OS_PATH="$(abspath $(CUSTOMPIOS_PATH))/src" \
+		bash -x ./build_dist
 	@echo ""
 	@echo "âœ… Build complete!"
-	@echo "Image: $(WORKSPACE_DIR)/<clone-folder-name>.img  (e.g. RAVENOS-PI5.img â€” name matches the parent directory of src/)"
+	@echo "Image: $(WORKSPACE_DIR)/<parent-of-src>.img (matches repo folder name, e.g. RatOS-PI5.img)"
 
 clean:
 	@echo "Cleaning workspace..."

@@ -104,17 +104,20 @@ Edit `src/config` to change:
 ### 5. Build
 
 ```bash
-cd ~/RAVENOS-PI5
+cd ~/REPOS/RatOS-PI5
 make build
 ```
+
+`make build` passes **`DIST_PATH`** and **`CUSTOM_PI_OS_PATH`** into `sudo` (same idea as CI). If you run **`build_dist` by hand**, you must export those first or you will see **`/config: No such file or directory`**.
 
 This takes **30â€“90 minutes** depending on your internet speed and machine.
 The build downloads packages inside the chroot.
 
 The finished image will be at:
 ```
-src/workspace/RAVENOS-PI5.img
+src/workspace/<clone-folder-name>.img
 ```
+Example if the repo folder is `RatOS-PI5`: `src/workspace/RatOS-PI5.img`.
 
 ---
 
