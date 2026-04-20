@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# RavenOS PI5 — Configurator module (clone Raven3DTech/RatOS-configurator fork; branch v2.1.x)
+# RavenOS PI5 — Configurator module (clone Raven3DTech/RatOS-configurator fork → ~/configurator; branch v2.1.x)
 # ============================================================
 set -ex
 
@@ -62,12 +62,12 @@ sudo -u pi mkdir -p ${RATOS_CONFIG_PATH}
 
 # ── Write .env.local ─────────────────────────────────────────
 # Move the environment file to the actual Next.js app directory (src)
-cp /filesystem/home/pi/ratos-configurator/.env.local \
+cp /filesystem/home/pi/configurator/.env.local \
    ${RATOS_CONFIGURATOR_DIR}/src/.env.local
 chown pi:pi ${RATOS_CONFIGURATOR_DIR}/src/.env.local
 
 # ── Wi-Fi setup (Bookworm): NM needs nmcli; upstream only wrote wpa_supplicant.conf ─
-cp /filesystem/home/pi/ratos-configurator-patches/add-wifi-network.sh \
+cp /filesystem/home/pi/configurator-patches/add-wifi-network.sh \
    ${RATOS_CONFIGURATOR_DIR}/src/scripts/add-wifi-network.sh
 chmod 755 ${RATOS_CONFIGURATOR_DIR}/src/scripts/add-wifi-network.sh
 chown pi:pi ${RATOS_CONFIGURATOR_DIR}/src/scripts/add-wifi-network.sh
@@ -222,13 +222,13 @@ chmod +x /home/pi/scripts/ravenos-firstboot.sh
 chown pi:pi /home/pi/scripts/ravenos-firstboot.sh
 
 # ── systemd services ──────────────────────────────────────────
-cp /filesystem/etc/systemd/system/ratos-configurator.service \
-   /etc/systemd/system/ratos-configurator.service
+cp /filesystem/etc/systemd/system/ravenos-configurator.service \
+   /etc/systemd/system/ravenos-configurator.service
 
 cp /filesystem/etc/systemd/system/ravenos-firstboot.service \
    /etc/systemd/system/ravenos-firstboot.service
 
-systemctl_if_exists enable ratos-configurator
+systemctl_if_exists enable ravenos-configurator
 systemctl_if_exists enable ravenos-firstboot
 systemctl_if_exists enable avahi-daemon
 

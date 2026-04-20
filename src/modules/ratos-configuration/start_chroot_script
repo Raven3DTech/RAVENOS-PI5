@@ -21,16 +21,16 @@ chown "${BASE_USER}:${BASE_USER}" "${TMP_CLONE}"
 
 echo_green "Fetching RatOS-configurator (${RATOS_CONFIGURATOR_CONFIGURATION_BRANCH}) for configuration/ ..."
 sudo -u "${BASE_USER}" git clone -b "${RATOS_CONFIGURATOR_CONFIGURATION_BRANCH}" --depth 1 \
-    "${RATOS_CONFIGURATOR_REPO}" "${TMP_CLONE}/ratos-configurator"
+    "${RATOS_CONFIGURATOR_REPO}" "${TMP_CLONE}/configurator"
 
-if [[ ! -d "${TMP_CLONE}/ratos-configurator/configuration" ]]; then
+if [[ ! -d "${TMP_CLONE}/configurator/configuration" ]]; then
     echo_red "Missing configuration/ in RatOS-configurator clone"
     exit 1
 fi
 
 rm -rf "${RATOS_CONFIGURATION_PATH}"
 mkdir -p "${RATOS_CONFIGURATION_PATH}"
-cp -a "${TMP_CLONE}/ratos-configurator/configuration/." "${RATOS_CONFIGURATION_PATH}/"
+cp -a "${TMP_CLONE}/configurator/configuration/." "${RATOS_CONFIGURATION_PATH}/"
 
 # Upstream templates sometimes embed the legacy folder name; normalize to RavenOS on disk.
 while IFS= read -r -d '' f; do

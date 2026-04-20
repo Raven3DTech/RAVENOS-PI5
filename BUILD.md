@@ -163,9 +163,9 @@ Note the following **compatibility** points versus a stock RatOS image:
 | **Configurator on :80 (RatOS parity)** | Stock RatOS uses **`http://<host>/configure`**. RavenOS PI5 **nginx** reverse-proxies **`/configure/*`** to Next.js on **127.0.0.1:3000** and redirects **`/config`** → **`/`** so RatOS install-doc Mainsail links work. The Configurator’s **`NEXT_PUBLIC_MOONRAKER_URL`** targets **`http://<host>`** so the browser hits Moonraker through the same nginx site. |
 | **Moonraker ↔ Klipper socket** | RavenOS PI5 keeps `klippy_uds_address: /tmp/klippy_uds` in the **live** `moonraker.conf`. Reference `moonraker.conf` snippets **inside** the copied RatOS tree are not overlaid on the system config, so Moonraker and `klipper.service` stay in sync. |
 | **`scripts/ratos-install.sh`** | Upstream expects to be run as **`pi` (not root)**, replaces `printer.cfg` from RatOS templates, installs many udev symlinks, and calls the **`ratos` CLI** (Configurator API) to register Klipper extensions. The image build **only copies** the modular tree and installs `python3-matplotlib` / `curl`; run `ratos-install.sh` manually after first boot if you want the full RatOS wiring. |
-| **Moonraker Update Manager** | There is **no** `[update_manager ratos_configuration]` entry: `~/printer_data/config/RatOS` is **not** its own Git checkout. **Update Manager** still updates **`ratos-configurator`** (`~/ratos-configurator`). After a configurator `git pull`, sync boards/macros into Klipper’s tree if you need new hardware on disk without reflashing, for example: `rsync -a --delete ~/ratos-configurator/configuration/ ~/printer_data/config/RatOS/` then restart **Klipper** (and re-apply the **`ratos-update.sh` patches** in this doc if that script was overwritten). |
+| **Moonraker Update Manager** | There is **no** `[update_manager ratos_configuration]` entry: `~/printer_data/config/RavenOS` is **not** its own Git checkout. **Update Manager** uses **`[update_manager ravenos_configurator]`** and updates **`~/configurator`** (Raven3DTech/RatOS-configurator). After a configurator `git pull`, sync boards/macros into Klipper’s tree if you need new hardware on disk without reflashing, for example: `rsync -a --delete ~/configurator/configuration/ ~/printer_data/config/RavenOS/` then restart **Klipper** (and re-apply the **`ratos-update.sh` patches** in this doc if that script was overwritten). |
 | **Raspberry Pi 5** | RatOS board packs do **not** gate on a specific Pi model. Boards, macros, and `boards/rpi/firmware.config` are plain Klipper Kconfig snippets; the RPi “MCU” preset is the **Linux process** build, which is valid on **Pi 4 and Pi 5** under **64-bit** Pi OS. |
-| **`ratos-update.sh` (if you run it)** | The image build **patches** `~/printer_data/config/RatOS/scripts/ratos-update.sh` after the copy: `python3.9` in the matplotlib path is replaced with the **actual** `python3.*` folder under `~/klippy-env/lib/` (Bookworm is usually 3.11), and the **`ensure_node_18` line is commented out** so Node **20** from RavenOS PI5 is not downgraded to Node 18. If you rsync fresh files from `~/ratos-configurator/configuration/` and that resets `ratos-update.sh`, re-apply those edits or re-flash. |
+| **`ratos-update.sh` (if you run it)** | The image build **patches** `~/printer_data/config/RavenOS/scripts/ratos-update.sh` after the copy: `python3.9` in the matplotlib path is replaced with the **actual** `python3.*` folder under `~/klippy-env/lib/` (Bookworm is usually 3.11), and the **`ensure_node_18` line is commented out** so Node **20** from RavenOS PI5 is not downgraded to Node 18. If you rsync fresh files from `~/configurator/configuration/` and that resets `ratos-update.sh`, re-apply those edits or re-flash. |
 
 ### Raspberry Pi 5 — “full compatibility” checklist
 
@@ -249,17 +249,17 @@ Use this when the Pi **never reaches a login prompt** or **shows no boot progres
 
 ```bash
 # Check status of all RavenOS PI5 services
-systemctl status klipper moonraker ratos-configurator nginx
+systemctl status klipper moonraker ravenos-configurator nginx
 
 # Restart a service
 sudo systemctl restart klipper
 sudo systemctl restart moonraker
-sudo systemctl restart ratos-configurator
+sudo systemctl restart ravenos-configurator
 
 # View live logs
 journalctl -fu klipper
 journalctl -fu moonraker
-journalctl -fu ratos-configurator
+journalctl -fu ravenos-configurator
 
 # First boot log
 cat /var/log/ravenos-firstboot.log
@@ -335,8 +335,8 @@ cat ~/printer_data/logs/klippy.log
 Moonraker **0.10+** no longer uses **`[panel_custom …]`** in **`moonraker.conf`** for this stack. Open the Configurator at **`http://<hostname>.local/configure`** (or **`http://<IP>/configure`**) from the address bar or a browser bookmark.
 
 ```bash
-sudo systemctl status ratos-configurator
-journalctl -fu ratos-configurator
+sudo systemctl status ravenos-configurator
+journalctl -fu ravenos-configurator
 ```
 
 ### Configurator can't flash board
@@ -377,7 +377,7 @@ Pi 5 (Bookworm 64-bit arm64)
 │   ├── NetworkManager.service   :  Ethernet + WiFi (from base Pi OS image)
 │   ├── autohotspot.service      :  RatOS-style fallback AP if no known WiFi (hostapd + dnsmasq)
 │   ├── nginx.service            :  → :80 (Mainsail) + proxy :7125
-│   ├── ratos-configurator.service: next start → :3000; nginx /configure → :3000
+│   ├── ravenos-configurator.service: next start → :3000; nginx /configure → :3000
 │   ├── crowsnest.service         :  webcam streaming
 │   ├── sonar.service             :  WiFi keepalive (optional)
 │   ├── KlipperScreen.service     :  touchscreen UI (if installed)
@@ -389,7 +389,7 @@ Pi 5 (Bookworm 64-bit arm64)
 │   ├── klipper/                 Klipper source + klippy-env/
 │   ├── moonraker/               Moonraker source + moonraker-env/
 │   ├── mainsail/                Mainsail web app (symlinked to /var/www/mainsail)
-│   ├── ratos-configurator/      Next.js app
+│   ├── configurator/            Next.js app (clone of RatOS-configurator)
 │   ├── crowsnest/               webcam stack (if module enabled)
 │   ├── sonar/                   WiFi keepalive (if module enabled)
 │   ├── KlipperScreen/           touchscreen UI (if module enabled)

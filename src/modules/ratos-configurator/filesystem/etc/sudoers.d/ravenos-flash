@@ -9,7 +9,7 @@ pi ALL=(ALL) NOPASSWD: /usr/bin/dfu-util
 pi ALL=(ALL) NOPASSWD: /usr/bin/avrdude
 pi ALL=(ALL) NOPASSWD: /usr/bin/stm32flash
 pi ALL=(ALL) NOPASSWD: /home/pi/klipper/scripts/flash-sdcard.sh
-pi ALL=(ALL) NOPASSWD: /home/pi/ratos-configurator/src/scripts/*.sh
+pi ALL=(ALL) NOPASSWD: /home/pi/configurator/src/scripts/*.sh
 
 # Wi-Fi wizard: Configurator runs `sudo iw dev … scan ap-force` (see server/helpers/iw.ts).
 # Without this, scans fail on the hotspot (192.168.50.1) and the network list stays empty.
@@ -18,7 +18,7 @@ pi ALL=(ALL) NOPASSWD: /usr/sbin/iw, /sbin/iw
 # Allow systemctl restart of klipper and moonraker
 pi ALL=(ALL) NOPASSWD: /bin/systemctl restart klipper
 pi ALL=(ALL) NOPASSWD: /bin/systemctl restart moonraker
-pi ALL=(ALL) NOPASSWD: /bin/systemctl restart ratos-configurator
+pi ALL=(ALL) NOPASSWD: /bin/systemctl restart ravenos-configurator
 pi ALL=(ALL) NOPASSWD: /bin/systemctl stop klipper
 pi ALL=(ALL) NOPASSWD: /bin/systemctl start klipper
 

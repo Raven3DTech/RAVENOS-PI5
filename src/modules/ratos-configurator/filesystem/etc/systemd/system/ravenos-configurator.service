@@ -1,5 +1,5 @@
 [Unit]
-Description=RavenOS Configurator (Raven3DTech/RatOS-configurator fork)
+Description=RavenOS Configurator (Next.js; ~/configurator)
 Documentation=https://github.com/Raven3DTech/RatOS-configurator
 After=network.target moonraker.service
 Wants=moonraker.service
@@ -7,25 +7,25 @@ Wants=moonraker.service
 [Service]
 Type=simple
 User=pi
-WorkingDirectory=/home/pi/ratos-configurator/src
-EnvironmentFile=/home/pi/ratos-configurator/src/.env.local
+WorkingDirectory=/home/pi/configurator/src
+EnvironmentFile=/home/pi/configurator/src/.env.local
 # Ensure server-side paths are always present for Node/Next workers (mirrors .env.local).
 Environment=RATOS_CONFIGURATION_PATH=/home/pi/printer_data/config/RavenOS
 Environment=KLIPPER_CONFIG_PATH=/home/pi/printer_data/config
 Environment=KLIPPER_DIR=/home/pi/klipper
 Environment=KLIPPER_ENV=/home/pi/klippy-env
 Environment=MOONRAKER_DIR=/home/pi/moonraker
-Environment=RATOS_SCRIPT_DIR=/home/pi/ratos-configurator/src/scripts
+Environment=RATOS_SCRIPT_DIR=/home/pi/configurator/src/scripts
 Environment=LOG_FILE=/home/pi/printer_data/logs/ravenos-configurator.log
 Environment=RATOS_DATA_DIR=/home/pi/printer_data/ravenos
 Environment=NODE_ENV=production
 Environment=USER=pi
-ExecStart=/usr/bin/node /home/pi/ratos-configurator/src/node_modules/next/dist/bin/next start --port 3000 --hostname 0.0.0.0
+ExecStart=/usr/bin/node /home/pi/configurator/src/node_modules/next/dist/bin/next start --port 3000 --hostname 0.0.0.0
 Restart=always
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=ratos-configurator
+SyslogIdentifier=ravenos-configurator
 
 [Install]
 WantedBy=multi-user.target

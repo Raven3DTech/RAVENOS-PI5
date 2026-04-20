@@ -79,7 +79,7 @@ sed -i "s/${DEFAULT_HOST}.local/${NEW_HOSTNAME}.local/g" \
     /home/pi/printer_data/config/moonraker.conf
 
 # RavenOS Configurator .env.local (root copy optional; src is canonical)
-for _cfg_env in /home/pi/ratos-configurator/.env.local /home/pi/ratos-configurator/src/.env.local; do
+for _cfg_env in /home/pi/configurator/.env.local /home/pi/configurator/src/.env.local; do
     if [ -f "${_cfg_env}" ]; then
         sed -i "s/${DEFAULT_HOST}.local/${NEW_HOSTNAME}.local/g" "${_cfg_env}"
     fi
@@ -119,7 +119,7 @@ mkdir -p /home/pi/printer_data/ravenos /home/pi/printer_data/logs /home/pi/timel
 touch /home/pi/printer_data/logs/sonar.log
 chown -R pi:pi /home/pi/printer_data
 chown -R pi:pi /home/pi/timelapse
-chown -R pi:pi /home/pi/ratos-configurator
+chown -R pi:pi /home/pi/configurator
 chown -R pi:pi /home/pi/klipper
 chown -R pi:pi /home/pi/moonraker
 [ -d /home/pi/mainsail ] && chown -R pi:pi /home/pi/mainsail
@@ -136,7 +136,7 @@ systemctl start klipper
 sleep 3
 systemctl start moonraker
 sleep 3
-systemctl start ratos-configurator
+systemctl start ravenos-configurator
 systemctl restart nginx
 
 # ── Enable auto-hotspot after first boot (avoids fighting NM during initial bring-up) ─

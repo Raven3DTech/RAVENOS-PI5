@@ -1,7 +1,7 @@
 # Configurator Module Config
 export RATOS_CONFIGURATOR_REPO=https://github.com/Raven3DTech/RatOS-configurator.git
 export RATOS_CONFIGURATOR_BRANCH=v2.1.x
-export RATOS_CONFIGURATOR_DIR=/home/pi/ratos-configurator
+export RATOS_CONFIGURATOR_DIR=/home/pi/configurator
 export RATOS_CONFIGURATOR_PORT=3000
 
 # Paths that the configurator needs to read/write
