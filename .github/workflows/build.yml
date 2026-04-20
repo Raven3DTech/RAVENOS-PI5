@@ -1,9 +1,10 @@
 name: Build RatOS PI5 Image
 
+# Full image builds are heavy (hours, multi-GB). They do not run on every push to main.
+# - Run manually: Actions → this workflow → "Run workflow".
+# - Releases: pushing a tag matching v* still builds and publishes a GitHub Release with the image.
 on:
   push:
-    branches:
-      - main
     tags:
       - 'v*'
   workflow_dispatch:

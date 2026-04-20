@@ -27,8 +27,8 @@ Then use `cd RAVENOS-PI5/src` for builds; it is the same working tree.
 
 ## Where to build
 
-- **Linux:** native, VM, or **WSL2** with Ubuntu â€” run `make build` or `sudo bash -x ./build_dist` from `src/` (see **README.md**).
-- **GitHub Actions:** push to `main` or run workflow **Build RatOS PI5 Image** manually; artifacts use **`RatOS-PI5-<version>-arm64`** (see **`.github/workflows/build.yml`**).
+- **Linux:** native, VM, or **WSL2** with Ubuntu â€” run **`make build`** from the repo root (see **README.md** / **BUILD.md**). Do not run `./build_dist` under plain `sudo` without **`DIST_PATH`** and **`CUSTOM_PI_OS_PATH`** (the Makefile sets them).
+- **GitHub Actions:** full image builds run on **workflow_dispatch** (manual) and on **tags** `v*`; they do **not** run on every push to `main`. Artifacts use **`RatOS-PI5-<version>-arm64`** (see **`.github/workflows/build.yml`**).
 
 ## Upstream repository URL
 

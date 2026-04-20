@@ -46,6 +46,16 @@ The **`hotspot`** module follows [Rat-OS/RatOS `v2.1.x` `hotspot`](https://githu
 
 ---
 
+## GitHub Actions (CI)
+
+Full image builds are **slow** and **bandwidth-heavy**. The workflow is set up so you can **prove the image locally first**, then use GitHub only when you want a hosted build or a release.
+
+- **Not on every `main` push:** the image workflow does **not** run automatically when you push commits to `main` (saves Actions minutes and duplicate downloads).
+- **Manual run:** in the repo on GitHub go to **Actions** → **Build RatOS PI5 Image** → **Run workflow**. You can toggle **Skip PiShrink** for a quicker, larger debug artifact.
+- **Releases:** pushing a **tag** matching `v*` (for example `v1.0.0`) still runs the workflow and creates a **GitHub Release** with the built image (see workflow file for details).
+
+---
+
 ## Step-by-Step Build
 
 ### 1. Clone both repos side by side

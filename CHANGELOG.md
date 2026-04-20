@@ -19,6 +19,7 @@
 - **Branding:** product name **RatOS PI5** (RatOS v2.1.x stack port for Raspberry Pi OS / Pi 5). Default hostname **`ratos`**, mDNS **`ratos.local`**, fallback hotspot SSID **`ratos`**, first-boot service and scripts renamed to **`ratos-firstboot`** (see README).
 - **hotspot:** install `autohotspot.service` but **do not** enable it in the chroot; **`ratos-firstboot.sh`** enables and **starts** it once after first boot (oneshot) so **NetworkManager** is less likely to conflict on a cold Pi 5 boot, without requiring a second reboot for the AP.
 - **CI:** `workflow_dispatch` input **`skip_pishrink`** â€” skip PiShrink for a **much larger** artifact when debugging â€œimage will not bootâ€ after shrink.
+- **CI:** full image workflow no longer runs on **every push to `main`**; use **Actions â†’ Run workflow** for manual builds. Pushing a **`v*`** tag still runs the release build (saves runner time and bandwidth when iterating locally first).
 
 ## v1.0.0 â€” Initial Release
 
